@@ -1,0 +1,16 @@
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+#map {
+    height: 600px;
+    width: 90%;
+    margin: auto;
+    border: 2px solid #444;
+}
+#info-box {
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 18px;
+}
