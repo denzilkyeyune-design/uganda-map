@@ -1,0 +1,22 @@
+{
+  "Central Region": {
+    "population": 6000000,
+    "households": 1500000,
+    "literacy": "78%"
+  },
+  "Eastern Region": {
+    "population": 5500000,
+    "households": 1400000,
+    "literacy": "70%"
+  },
+  "Northern Region": {
+    "population": 4500000,
+    "households": 1200000,
+    "literacy": "68%"
+  },
+  "Western Region": {
+    "population": 5000000,
+    "households": 1300000,
+    "literacy": "75%"
+  }
+}
