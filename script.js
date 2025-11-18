@@ -1,10 +1,20 @@
 // Create map
 var map = L.map('map').setView([1.3, 32.3], 7);
 
-// Add OSM tiles
+// Base tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
 }).addTo(map);
+
+// Global variable to store district info
+let districtData = {};
+
+// Load district data
+fetch("district-data.json")
+  .then(res => res.json())
+  .then(data => {
+    districtData = data;
+  });
 
 // Load Uganda GeoJSON
 fetch("uganda.json")
@@ -19,14 +29,24 @@ fetch("uganda.json")
       },
       onEachFeature: function (feature, layer) {
         layer.on("click", function () {
-          const districtName = feature.properties.NAME_1; // matches your file
 
-          document.getElementById("info-content").innerHTML = `
-              <strong>${districtName}</strong><br>
-              Population: (add later)<br>
-              Households: (add later)<br>
-              Literacy: (add later)
-          `;
+          const districtName = feature.properties.NAME_1;
+
+          let info = districtData[districtName];
+
+          if (info) {
+              document.getElementById("info-content").innerHTML = `
+                <strong>${districtName}</strong><br><br>
+                <b>Population:</b> ${info.population}<br>
+                <b>Households:</b> ${info.households}<br>
+                <b>Literacy:</b> ${info.literacy}<br>
+              `;
+          } else {
+              document.getElementById("info-content").innerHTML = `
+                <strong>${districtName}</strong><br>
+                No data added yet.<br>
+              `;
+          }
         });
 
         layer.on("mouseover", function () {
