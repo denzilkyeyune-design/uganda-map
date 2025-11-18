@@ -3,26 +3,21 @@
 <head>
     <meta charset="utf-8" />
     <title>Uganda Interactive Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-    <h2>Uganda Interactive Map (Village Data Coming Soon)</h2>
+    <h2>Uganda Interactive Map (District Level)</h2>
+
     <div id="map"></div>
-    <div id="info-box">Click anywhere on the map to view details.</div>
+
+    <div id="info-panel">
+        <h3>Click a district</h3>
+        <div id="info-content">District info will appear here</div>
+    </div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
-<div id="info-panel" style="
-  display:none;
-  position:absolute;
-  top:20px;
-  right:20px;
-  background:white;
-  padding:15px;
-  border-radius:8px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.2);
-  max-width:250px;
-"></div>
-
