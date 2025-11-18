@@ -1,39 +1,41 @@
-// Load the map JSON file
+// Create map
+var map = L.map('map').setView([1.3, 32.3], 7);
+
+// Add OSM tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+}).addTo(map);
+
+// Load Uganda GeoJSON
 fetch("uganda.json")
-  .then(response => response.json())
+  .then(res => res.json())
   .then(data => {
-    const svg = d3.select("svg");
+    L.geoJSON(data, {
+      style: {
+        color: "#333",
+        weight: 1,
+        fillColor: "#cce5ff",
+        fillOpacity: 0.6
+      },
+      onEachFeature: function (feature, layer) {
+        layer.on("click", function () {
+          const districtName = feature.properties.NAME_1; // matches your file
 
-    // Draw each district
-    svg.append("g")
-      .selectAll("path")
-      .data(data.features)
-      .enter()
-      .append("path")
-      .attr("d", d3.geoPath())
-      .attr("fill", "#cce5ff")
-      .attr("stroke", "#333")
-      .attr("stroke-width", 0.5)
-      .on("mouseover", function () {
-        d3.select(this).attr("fill", "#99ccff");
-      })
-      .on("mouseout", function () {
-        d3.select(this).attr("fill", "#cce5ff");
-      })
-      .on("click", function (event, d) {
-        showDistrictInfo(d.properties.DNAME_2014);
-      });
+          document.getElementById("info-content").innerHTML = `
+              <strong>${districtName}</strong><br>
+              Population: (add later)<br>
+              Households: (add later)<br>
+              Literacy: (add later)
+          `;
+        });
+
+        layer.on("mouseover", function () {
+          this.setStyle({ fillColor: "#99ccff" });
+        });
+
+        layer.on("mouseout", function () {
+          this.setStyle({ fillColor: "#cce5ff" });
+        });
+      }
+    }).addTo(map);
   });
-
-// Function to show info when clicking a district
-function showDistrictInfo(districtName) {
-  // Temporary message — we will add real stats later
-  const panel = document.getElementById("info-panel");
-  panel.innerHTML = `
-      <h2>${districtName}</h2>
-      <p>Population: (add data)</p>
-      <p>Literacy rate: (add data)</p>
-      <p>Households: (add data)</p>
-  `;
-  panel.style.display = "block";
-}
