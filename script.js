@@ -1,78 +1,129 @@
-// Initialize map
-var map = L.map('map').setView([0.33, 32.58], 11);
+// Create map
+var map = L.map('map').setView([1.3, 32.3], 7);
 
 // Basemap
-var basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
-basemap.addTo(map);
+var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
 
-// Storage for layers
-var divisionLayer, parishLayer, villageLayer;
+// Layers
+let districtsLayer;
+let kampalaLayer;
 
-// Load Kampala GeoJSON
-fetch("kampala_admin.geojson")   // <-- rename your final file here
-  .then(res => res.json())
-  .then(data => {
+// Highlight style
+function highlightStyle() {
+    return {
+        weight: 3,
+        color: "#00aa00",
+        fillColor: "#ccffcc",
+        fillOpacity: 0.7
+    };
+}
 
-    // --- FILTER LEVELS ---
-    const divisions = data.features.filter(f => f.properties.CNAME2014);
-    const parishes = data.features.filter(f => f.properties.PNAME2014);
-    const villages = data.features.filter(f => f.properties.VNAME2014);
+// Normal style
+function defaultStyle() {
+    return {
+        weight: 1,
+        color: "#333",
+        fillColor: "#cce5ff",
+        fillOpacity: 0.6
+    };
+}
 
-    // --- STYLE FUNCTIONS ---
-    function styleDivision() {
-      return { color: "#ff9900", weight: 1, fillOpacity: 0.1 };
-    }
-    function styleParish() {
-      return { color: "#005ce6", weight: 1, fillOpacity: 0.1 };
-    }
-    function styleVillage() {
-      return { color: "#00b300", weight: 1, fillOpacity: 0.3 };
-    }
+// Click highlight
+let selectedLayer = null;
 
-    // --- CLICK HANDLER: ALWAYS SHOW VILLAGE NAME ---
-    function clickHandler(e, props) {
-      let name = props.VNAME2014 || props.PNAME2014 || props.CNAME2014 || "Unknown";
+// Load Uganda districts
+fetch("district_boundaries_2014.geojson")
+    .then(res => res.json())
+    .then(data => {
+        districtsLayer = L.geoJSON(data, {
+            style: defaultStyle,
+            onEachFeature: function (feature, layer) {
 
-      L.popup()
-        .setLatLng(e.latlng)
-        .setContent(`<b>${name}</b>`)
-        .openOn(map);
-    }
+                layer.on("mouseover", function () {
+                    this.setStyle({ fillColor: "#99ccff" });
+                });
 
-    // --- CREATE LAYERS ---
-    divisionLayer = L.geoJSON(divisions, {
-      style: styleDivision,
-      onEachFeature: function (f, layer) {
-        layer.on("click", e => clickHandler(e, f.properties));
-      }
+                layer.on("mouseout", function () {
+                    this.setStyle(defaultStyle());
+                });
+
+                layer.on("click", function () {
+                    const districtName =
+                        feature.properties.DNAME2014 ||
+                        feature.properties.NAME_2 ||
+                        feature.properties.NAME_1 ||
+                        "Unknown District";
+
+                    // Sidebar update
+                    document.getElementById("info-content").innerHTML =
+                        `<h2>${districtName}</h2>Loading admin data...`;
+
+                    // Highlight clicked district
+                    if (selectedLayer) districtsLayer.resetStyle(selectedLayer);
+                    selectedLayer = layer;
+                    layer.setStyle(highlightStyle());
+
+                    // Load Kampala only if selected
+                    if (districtName.toUpperCase() === "KAMPALA") {
+                        loadKampala();
+                    } else {
+                        if (kampalaLayer) {
+                            map.removeLayer(kampalaLayer);
+                            kampalaLayer = null;
+                        }
+                    }
+                });
+            }
+        }).addTo(map);
     });
 
-    parishLayer = L.geoJSON(parishes, {
-      style: styleParish,
-      onEachFeature: function (f, layer) {
-        layer.on("click", e => clickHandler(e, f.properties));
-      }
-    });
+// Load Kampala admin units (parish/village polygons)
+function loadKampala() {
+    fetch("Kampala District.json")
+        .then(res => res.json())
+        .then(data => {
 
-    villageLayer = L.geoJSON(villages, {
-      style: styleVillage,
-      onEachFeature: function (f, layer) {
-        layer.on("click", e => clickHandler(e, f.properties));
-      }
-    });
+            // Remove previous layer if exists
+            if (kampalaLayer) map.removeLayer(kampalaLayer);
 
-    // Add default visible layer
-    villageLayer.addTo(map);
+            kampalaLayer = L.geoJSON(data, {
+                style: {
+                    color: "#0066cc",
+                    weight: 1,
+                    fillColor: "#99ddff",
+                    fillOpacity: 0.5
+                },
 
-    // --- LAYER SWITCHER ICON ---
-    L.control.layers(
-      { "Basemap": basemap },
-      {
-        "Village Level": villageLayer,
-        "Parish Level": parishLayer,
-        "Division Level": divisionLayer
-      },
-      { collapsed: false }
-    ).addTo(map);
+                onEachFeature: function (feature, layer) {
 
-  });
+                    layer.on("mouseover", function () {
+                        this.setStyle({ fillColor: "#55ccff" });
+                    });
+
+                    layer.on("mouseout", function () {
+                        this.setStyle({ fillColor: "#99ddff" });
+                    });
+
+                    layer.on("click", function () {
+                        const parish =
+                            feature.properties.PNAME2014 ||
+                            feature.properties.SNAME2014 ||
+                            feature.properties.VNAME2014 ||
+                            "Unknown";
+
+                        const village =
+                            feature.properties.VNAME2014 ||
+                            "No village name";
+
+                        document.getElementById("info-content").innerHTML = `
+                            <h2>KAMPALA</h2>
+                            <strong>Parish:</strong> ${parish}<br>
+                            <strong>Village:</strong> ${village}<br>
+                        `;
+                    });
+                }
+            }).addTo(map);
+        });
+}
