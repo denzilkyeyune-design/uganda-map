@@ -25,12 +25,10 @@ fetch("uganda_districts.geojson")
           fillOpacity: 0.6
         },
         onEachFeature: function(feature, layer) {
+
           layer.on("click", function() {
-              const name = feature.properties.DISTRICT || 
-                           feature.properties.DNAME2014 || 
-                           feature.properties.NAME_2 || 
-                           feature.properties.NAME_1;
-              
+              const name = feature.properties.DNAME2014;
+
               const info = districtInfo[name];
 
               if (info) {
