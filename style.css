@@ -1,40 +1,12 @@
-/* Basic layout */
-html,body { height:100%; margin:0; font-family: Arial, Helvetica, sans-serif; }
-#map { position: absolute; left:0; top:0; bottom:0; right:320px; }
-#info-panel {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 320px;
-  height: 100%;
-  background: #fff;
-  padding: 14px;
-  box-shadow: -2px 0 8px rgba(0,0,0,0.12);
-  z-index: 999;
-  overflow-y: auto;
+body {
+  margin: 0;
+  padding: 0;
 }
-#info-panel h2 { margin: 8px 0; font-size:18px; color:#0b8a43; }
-#info-content { font-size:14px; line-height:1.45; }
 
-.map-control { position:absolute; top:12px; left:12px; z-index:1000; }
-#toggleBasemap {
-  background: #fff; border:1px solid #ddd; padding:6px 10px; border-radius:6px; cursor:pointer;
-  box-shadow:0 2px 6px rgba(0,0,0,0.12);
+#map {
+  width: 100vw;
+  height: 100vh;
 }
-#toggleBasemap:hover { background:#f6f6f6; }
-
-#controls { display:flex; gap:8px; margin-bottom:8px; }
-#btn-back, #btn-reset {
-  background:#007bff; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer;
-}
-#btn-back[style*="display:none"] { display:none; }
-#btn-reset { background:#6c757d; }
-
-.feature-label {
-  font-weight:700; margin-bottom:8px;
-}
-.small { font-size:13px; color:#444; margin-top:8px; }
-
 
 
 
