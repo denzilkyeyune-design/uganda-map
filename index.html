@@ -1,28 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>Uganda District Map</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uganda Map</title>
 
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="style.css"/>
 </head>
 
 <body>
 
-<!-- Sidebar -->
-<div id="sidebar">
-    <h2 id="district-title">District Information</h2>
-    <div id="district-details">
-        Click a district to view details.
+    <!-- Basemap Toggle Button -->
+    <div id="basemap-toggle" class="map-control">
+        <button id="toggleBasemap">🗺️ Basemap: ON</button>
     </div>
-</div>
 
-<!-- Map -->
-<div id="map"></div>
+    <!-- Info Sidebar -->
+    <div id="info-panel">
+        <h2>District Information</h2>
+        <div id="info-content">Click a district to view details.</div>
+    </div>
 
-<script src="script.js"></script>
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="script.js"></script>
 
 </body>
 </html>
