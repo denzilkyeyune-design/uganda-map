@@ -6,26 +6,34 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18
 }).addTo(map);
 
-// Load district info (correct filename!)
-let districtInfo = {};
+// Load district info file
+let districtInfo;
 
-fetch("district-data.json")
-  .then(res => res.json())
-  .then(data => districtInfo = data);
+async function loadDistrictInfo() {
+    const response = await fetch("district-data.json");
+    districtInfo = await response.json();
+}
 
-// Load Uganda district GeoJSON (correct filename!)
+loadDistrictInfo(); // load data first
+
+// Load Uganda district GeoJSON
+let districtLayer;
+
 fetch("district_boundaries_2014.geojson")
   .then(res => res.json())
   .then(data => {
-      L.geoJSON(data, {
+
+      districtLayer = L.geoJSON(data, {
         style: {
           color: "#333",
           weight: 1,
           fillColor: "#cce5ff",
           fillOpacity: 0.6
         },
+
         onEachFeature: function(feature, layer) {
 
+          // CLICK EVENT
           layer.on("click", function() {
               const name = feature.properties.DNAME2014;
 
@@ -46,13 +54,19 @@ fetch("district_boundaries_2014.geojson")
               }
           });
 
-          layer.on("mouseover", function() {
-              this.setStyle({ fillColor: "#99ccff" });
+          // HOVER EVENTS
+          layer.on("mouseover", function(e) {
+              e.target.setStyle({
+                  fillColor: "#99ccff",
+                  weight: 2
+              });
           });
 
-          layer.on("mouseout", function() {
-              this.setStyle({ fillColor: "#cce5ff" });
+          layer.on("mouseout", function(e) {
+              districtLayer.resetStyle(e.target);
           });
+
         }
+
       }).addTo(map);
   });
