@@ -1,35 +1,32 @@
-body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
+body, html {
+    margin: 0;
+    height: 100%;
 }
 
 #map {
-  width: 100vw;
-  height: 100vh;
+    width: calc(100% - 300px);
+    height: 100%;
+    float: left;
 }
 
 #sidebar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100%;
-  background: white;
-  padding: 15px;
-  overflow-y: auto;
-  border-left: 2px solid #ccc;
+    width: 300px;
+    height: 100%;
+    float: right;
+    padding: 15px;
+    background: #f8f8f8;
+    border-left: 1px solid #ccc;
+    overflow-y: auto;
 }
 
-#basemapBtn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 9999;
-  background: white;
-  border: 1px solid #555;
-  padding: 6px 10px;
-  cursor: pointer;
+h2, h3 {
+    margin-top: 0;
 }
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
 
