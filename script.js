@@ -14,7 +14,7 @@ fetch("district-info.json")
   .then(data => districtInfo = data);
 
 // Load Uganda district GeoJSON
-fetch("uganda_districts.geojson")
+fetch("district_boundaries_2014.geojson")
   .then(res => res.json())
   .then(data => {
       L.geoJSON(data, {
