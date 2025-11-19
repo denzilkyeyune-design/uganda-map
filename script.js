@@ -6,59 +6,37 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18
 }).addTo(map);
 
-// Load district info file
+// Load district info
 let districtInfo;
 
 async function loadDistrictInfo() {
-    const response = await fetch("district-data.json");
-    districtInfo = await response.json();
+    const res = await fetch("district-data.json");
+    districtInfo = await res.json();
 }
+loadDistrictInfo();
 
-loadDistrictInfo(); // load data first
-
-// Load Uganda district GeoJSON
 let districtLayer;
 
+// Load Uganda districts
 fetch("district_boundaries_2014.geojson")
   .then(res => res.json())
   .then(data => {
 
       districtLayer = L.geoJSON(data, {
+
         style: {
-          color: "#333",
-          weight: 1,
-          fillColor: "#cce5ff",
-          fillOpacity: 0.6
+          color: "#0056b3",
+          weight: 1.4,
+          fillColor: "#dceeff",
+          fillOpacity: 0.7
         },
 
         onEachFeature: function(feature, layer) {
-
-          // CLICK EVENT
-          layer.on("click", function() {
-              const name = feature.properties.DNAME2014;
-
-              const info = districtInfo[name];
-
-              if (info) {
-                document.getElementById("info-content").innerHTML = `
-                  <strong>${name}</strong><br><br>
-                  Population: ${info.population || "N/A"}<br>
-                  Households: ${info.households || "N/A"}<br>
-                  Literacy: ${info.literacy || "N/A"}<br>
-                `;
-              } else {
-                document.getElementById("info-content").innerHTML = `
-                  <strong>${name}</strong><br>
-                  No data added yet.
-                `;
-              }
-          });
-
-          // HOVER EVENTS
+          
           layer.on("mouseover", function(e) {
               e.target.setStyle({
-                  fillColor: "#99ccff",
-                  weight: 2
+                  weight: 3,
+                  fillColor: "#a8d1ff"
               });
           });
 
@@ -66,7 +44,29 @@ fetch("district_boundaries_2014.geojson")
               districtLayer.resetStyle(e.target);
           });
 
-        }
+          layer.on("click", function(e) {
+              const name = feature.properties.DNAME2014;
+              const info = districtInfo[name];
 
+              if (info) {
+                  document.getElementById("info-content").innerHTML = `
+                    <strong>${name}</strong><br><br>
+                    Population: ${info.population || "N/A"}<br>
+                    Households: ${info.households || "N/A"}<br>
+                    Literacy: ${info.literacy || "N/A"}<br>
+                  `;
+              } else {
+                  document.getElementById("info-content").innerHTML = `
+                    <strong>${name}</strong><br>
+                    No data added yet.
+                  `;
+              }
+
+              // Center map on district when clicked
+              map.fitBounds(e.target.getBounds());
+          });
+
+        }
       }).addTo(map);
   });
+
