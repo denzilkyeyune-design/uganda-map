@@ -16,6 +16,7 @@ async function loadDistrictInfo() {
 loadDistrictInfo();
 
 let districtLayer;
+let selectedDistrict = null; // <-- track clicked district
 
 // Load Uganda districts
 fetch("district_boundaries_2014.geojson")
@@ -24,30 +25,40 @@ fetch("district_boundaries_2014.geojson")
 
       districtLayer = L.geoJSON(data, {
 
-        style: {
-          color: "#0056b3",
-          weight: 1.4,
-          fillColor: "#dceeff",
-          fillOpacity: 0.7
+        style: function(feature) {
+          return {
+            color: "#0056b3",
+            weight: 1.4,
+            fillColor: "#dceeff",
+            fillOpacity: 0.7
+          };
         },
 
         onEachFeature: function(feature, layer) {
-          
+
+          // HOVER effects (only if not selected)
           layer.on("mouseover", function(e) {
-              e.target.setStyle({
-                  weight: 3,
-                  fillColor: "#a8d1ff"
-              });
+              if (selectedDistrict !== layer) {
+                e.target.setStyle({
+                    weight: 3,
+                    fillColor: "#a8d1ff"
+                });
+              }
           });
 
           layer.on("mouseout", function(e) {
-              districtLayer.resetStyle(e.target);
+              if (selectedDistrict !== layer) {
+                districtLayer.resetStyle(e.target);
+              }
           });
 
+          // CLICK event with pop-out highlight
           layer.on("click", function(e) {
+              
               const name = feature.properties.DNAME2014;
               const info = districtInfo[name];
 
+              // Update info panel
               if (info) {
                   document.getElementById("info-content").innerHTML = `
                     <strong>${name}</strong><br><br>
@@ -62,11 +73,36 @@ fetch("district_boundaries_2014.geojson")
                   `;
               }
 
-              // Center map on district when clicked
+              // Reset previous selection
+              if (selectedDistrict) {
+                  districtLayer.resetStyle(selectedDistrict);
+              }
+
+              // Fade all districts slightly
+              districtLayer.setStyle({
+                  fillOpacity: 0.3,
+                  color: "#888"
+              });
+
+              // Highlight the selected district strongly
+              layer.setStyle({
+                  color: "#003d99",
+                  weight: 4,
+                  fillColor: "#66aaff",
+                  fillOpacity: 0.8
+              });
+
+              selectedDistrict = layer;
+
+              // Bring the selected district to front visually
+              layer.bringToFront();
+
+              // Zoom into the clicked district
               map.fitBounds(e.target.getBounds());
           });
 
         }
       }).addTo(map);
   });
+
 
