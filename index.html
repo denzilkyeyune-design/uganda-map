@@ -1,41 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>Kampala Interactive Map</title>
-
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-
-  <!-- Turf.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-
+<meta charset="utf-8">
+<title>Uganda Interactive Map</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 </head>
+
 <body>
 
 <div id="map"></div>
 
 <div id="sidebar">
-  <h2>District Information</h2>
+    <h2>District Information</h2>
 
-  <h3>Show Kampala Layers</h3>
+    <h3>Show Kampala Layers</h3>
 
-  <label><input type="checkbox" id="chkDivisions" /> Divisions</label><br>
-  <label><input type="checkbox" id="chkSubcounties" /> Subcounties</label><br>
-  <label><input type="checkbox" id="chkParishes" /> Parishes</label><br>
-  <label><input type="checkbox" id="chkVillages" checked /> Villages</label><br>
+    <label><input type="checkbox" id="chk-divisions"> Divisions</label><br>
+    <label><input type="checkbox" id="chk-subcounties"> Subcounties</label><br>
+    <label><input type="checkbox" id="chk-parishes"> Parishes</label><br>
+    <label><input type="checkbox" id="chk-villages" checked> Villages</label><br>
 
-  <h3 id="districtName">KAMPALA</h3>
-  <div id="infoBox">District selected.</div>
-
+    <hr>
+    <div id="info-content">
+        Click on a district to see details.
+    </div>
 </div>
-
-<!-- Basemap Toggle -->
-<button id="basemapBtn">Basemap: ON</button>
 
 <script src="script.js"></script>
 </body>
 </html>
+
+
