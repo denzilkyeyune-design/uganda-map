@@ -1,44 +1,58 @@
-body {
+/* Full-screen layout */
+body, html {
     margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
     font-family: Arial, sans-serif;
 }
 
-/* Map full screen minus sidebar */
 #map {
-    height: 100vh;
-    width: calc(100vw - 350px);
-    float: right;
+    height: 100%;
+    width: calc(100% - 320px);
 }
 
 /* Sidebar */
-#sidebar {
-    position: fixed;
-    left: 0;
+#info-panel {
+    position: absolute;
     top: 0;
-    width: 350px;
-    height: 100vh;
-    background: #ffffff;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.15);
-    padding: 20px;
+    right: 0;
+    width: 320px;
+    height: 100%;
+    background: white;
+    border-left: 1px solid #ccc;
+    padding: 16px;
     overflow-y: auto;
+    z-index: 900;
+    box-shadow: -2px 0 6px rgba(0,0,0,0.15);
+}
+
+#info-panel h2 {
+    margin-top: 0;
+    font-size: 20px;
+}
+
+/* Basemap Toggle Button */
+.map-control {
+    position: absolute;
+    top: 12px;
+    left: 12px;
     z-index: 1000;
 }
 
-#sidebar h2 {
-    margin-top: 0;
-    color: #0a7a32; /* deep green header */
-}
-
-#district-details {
-    margin-top: 15px;
-    line-height: 1.5;
+#toggleBasemap {
+    background: white;
+    border: 1px solid #ccc;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
     font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
-
-
-#info-content {
-    font-size: 14px;
+#toggleBasemap:hover {
+    background: #f0f0f0;
 }
+
 
 
