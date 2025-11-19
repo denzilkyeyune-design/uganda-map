@@ -1,248 +1,278 @@
-// -----------------------------
-// CONFIG & FILE NAMES
-// -----------------------------
-const COUNTRY_FILE = "district_boundaries_2014.geojson"; // country districts
-const KAMPALA_FILE = "Kampala District.json";             // your Kampala feature file
-const DISTRICT_INFO_FILE = "district-data.json";         // optional metadata
+//-----------------------------------------------------
+// FILE CONFIG
+//-----------------------------------------------------
+const COUNTRY_FILE = "district_boundaries_2014.geojson";
+const KAMPALA_FILE = "Kampala District.json";
+const DISTRICT_INFO_FILE = "district-data.json"; // optional
 
-// -----------------------------
-// MAP & BASEMAP
-// -----------------------------
-const map = L.map('map').setView([0.3136, 32.5811], 7);
 
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//-----------------------------------------------------
+// MAP INITIALISATION
+//-----------------------------------------------------
+const map = L.map('map').setView([1.3, 32.3], 7);
+
+const basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19
 }).addTo(map);
 
 let basemapOn = true;
-document.getElementById("btn-toggle-basemap").addEventListener("click", () => {
-  if (basemapOn) { map.removeLayer(osm); document.getElementById("btn-toggle-basemap").innerText = "Basemap: OFF"; }
-  else { map.addLayer(osm); document.getElementById("btn-toggle-basemap").innerText = "Basemap: ON"; }
+
+document.getElementById("btn-toggle-basemap").onclick = () => {
+  if (basemapOn) {
+    map.removeLayer(basemap);
+    document.getElementById("btn-toggle-basemap").innerText = "Basemap: OFF";
+  } else {
+    map.addLayer(basemap);
+    document.getElementById("btn-toggle-basemap").innerText = "Basemap: ON";
+  }
   basemapOn = !basemapOn;
-});
+};
 
-// reset button
-document.getElementById("btn-reset").addEventListener("click", () => {
+document.getElementById("btn-reset").onclick = () => {
   map.setView([1.3, 32.3], 7);
-  if (selectedDistrictLayer) districtsLayer.resetStyle(selectedDistrictLayer);
+  if (selectedDistrict) districtsLayer.resetStyle(selectedDistrict);
   hideKampalaLayers();
-  document.getElementById("info-content").innerHTML = "Click any district (click Kampala to load admin units).";
-});
+  document.getElementById("info-content").innerHTML =
+    "Click any district. Click Kampala to load detailed admin units.";
+};
 
-// -----------------------------
-// UI toggles (initial state: divisions ON)
- // -----------------------------
+
+//-----------------------------------------------------
+// LEAFLET PANES (Z-INDEX LAYERS)
+//-----------------------------------------------------
+map.createPane("divisionsPane");
+map.getPane("divisionsPane").style.zIndex = 450;
+
+map.createPane("subcountiesPane");
+map.getPane("subcountiesPane").style.zIndex = 460;
+
+map.createPane("parishesPane");
+map.getPane("parishesPane").style.zIndex = 470;
+
+map.createPane("villagesPane");
+map.getPane("villagesPane").style.zIndex = 400;
+
+
+//-----------------------------------------------------
+// KAMPALA LAYER TOGGLES
+//-----------------------------------------------------
 const chkDivisions = document.getElementById("chk-divisions");
 const chkSubcounties = document.getElementById("chk-subcounties");
 const chkParishes = document.getElementById("chk-parishes");
 const chkVillages = document.getElementById("chk-villages");
 
-// -----------------------------
-// GLOBAL LAYER HOLDERS
-// -----------------------------
-let districtsLayer = null;
-let selectedDistrictLayer = null;
+chkDivisions.onchange =
+chkSubcounties.onchange =
+chkParishes.onchange =
+chkVillages.onchange = () => {
+  if (kampalaFeatures) renderKampalaLayers();
+};
 
-// Kampala source + derived layers
-let kampalaGeo = null;         // raw features (loaded once)
+
+//-----------------------------------------------------
+// STYLE FUNCTIONS
+//-----------------------------------------------------
+function styleDivision() {
+  return { color:"#d60000", weight:2.5, fillOpacity:0.05, pane:"divisionsPane" };
+}
+
+function styleSubcounty() {
+  return { color:"#0048ff", weight:2, fillOpacity:0.05, pane:"subcountiesPane" };
+}
+
+function styleParish() {
+  return { color:"#008f39", weight:1.8, fillOpacity:0.07, pane:"parishesPane" };
+}
+
+function styleVillage() {
+  return { color:"#ffb300", weight:0.4, fillColor:"#ffe9a3",
+           fillOpacity:0.25, pane:"villagesPane" };
+}
+
+function tempHighlight(layer) {
+  layer.setStyle({ weight: layer.options.weight + 1.5 });
+}
+
+
+//-----------------------------------------------------
+// HELPER: Choose best available name
+//-----------------------------------------------------
+function getBestName(props) {
+  if (props.VNAME2014) return {level:"Village", name:props.VNAME2014};
+  if (props.PNAME2014) return {level:"Parish", name:props.PNAME2014};
+  if (props.SNAME2014) return {level:"Subcounty", name:props.SNAME2014};
+  if (props.CNAME2014) return {level:"Division", name:props.CNAME2014};
+  return {level:"Unknown", name:"Unknown"};
+}
+
+
+//-----------------------------------------------------
+// GLOBALS FOR KAMPALA
+//-----------------------------------------------------
+let kampalaFeatures = null;
 let layerDivisions = null;
 let layerSubcounties = null;
 let layerParishes = null;
 let layerVillages = null;
 
-// optional metadata
-let districtInfo = {};
-fetch(DISTRICT_INFO_FILE).then(r=>r.json()).then(j=>districtInfo=j).catch(()=>{ districtInfo = {}; });
 
-// -----------------------------
-// STYLE FUNCTIONS
-// -----------------------------
-function styleDivision(feat){ return { color:"#cc0000", weight:1.8, fillOpacity:0.05 }; }     // red outlines
-function styleSubcounty(feat){ return { color:"#005ce6", weight:1.4, fillOpacity:0.06 }; }   // blue
-function styleParish(feat){ return { color:"#0b8a43", weight:1.2, fillOpacity:0.08 }; }      // green
-function styleVillage(feat){ return { color:"#ffaa00", weight:0.6, fillOpacity:0.35 }; }     // orange/yellow fill
-
-function highlightTemp(layer, options) {
-  layer.setStyle(Object.assign({ weight:2.6, fillOpacity: Math.max(options.fillOpacity || 0.4, 0.4) }, { color: options.color }));
-}
-
-// -----------------------------
-// HELPER: click shows village-first name
-// -----------------------------
-function getHierarchyName(props) {
-  // return village if exists, else parish, else subcounty, else division
-  if (props && props.VNAME2014 && String(props.VNAME2014).trim() !== "") return { level:"Village", name: props.VNAME2014 };
-  if (props && props.PNAME2014 && String(props.PNAME2014).trim() !== "") return { level:"Parish", name: props.PNAME2014 };
-  if (props && props.SNAME2014 && String(props.SNAME2014).trim() !== "") return { level:"Subcounty", name: props.SNAME2014 };
-  if (props && props.CNAME2014 && String(props.CNAME2014).trim() !== "") return { level:"Division", name: props.CNAME2014 };
-  return { level:"Unknown", name: "Unknown" };
-}
-
-// -----------------------------
-// LOAD COUNTRY DISTRICTS (first layer)
-// -----------------------------
-fetch(COUNTRY_FILE)
-  .then(r=>r.json())
-  .then(geojson => {
-    districtsLayer = L.geoJSON(geojson, {
-      style: { color:"#333", weight:1, fillColor:"#cce5ff", fillOpacity:0.6 },
-      onEachFeature: function(feat, lyr) {
-        lyr.on("mouseover", function(){ this.setStyle({ fillColor:"#99ccff" }); });
-        lyr.on("mouseout", function(){ if (selectedDistrictLayer !== lyr) districtsLayer.resetStyle(lyr); });
-        lyr.on("click", function(e){
-          // highlight district
-          if (selectedDistrictLayer) districtsLayer.resetStyle(selectedDistrictLayer);
-          selectedDistrictLayer = lyr;
-          lyr.setStyle({ weight:3, color:"#00aa00", fillColor:"#ccffcc", fillOpacity:0.7 });
-
-          const dname = (feat.properties.DNAME2014 || feat.properties.NAME_1 || feat.properties.NAME_2 || "Unknown").toUpperCase();
-          const info = districtInfo[dname] || districtInfo[dname.toUpperCase()] || null;
-          document.getElementById("info-content").innerHTML = info ? `<h3>${dname}</h3>` + (info.summary || "") : `<h3>${dname}</h3><div>No metadata available</div>`;
-
-          // only load Kampala layers when Kampala clicked
-          if (dname.includes("KAMPALA")) {
-            loadKampalaIfNeeded();
-          } else {
-            hideKampalaLayers();
-          }
-        });
-      }
-    }).addTo(map);
-  })
-  .catch(err => {
-    console.error("Failed loading country districts:", err);
-    document.getElementById("info-content").innerText = "Failed to load districts.";
+// Remove all Kampala layers
+function hideKampalaLayers() {
+  [layerDivisions, layerSubcounties, layerParishes, layerVillages].forEach(l => {
+    if (l) { map.removeLayer(l); }
   });
-
-// -----------------------------
-// LOAD KAMPALA RAW GEOJSON (only once)
-// -----------------------------
-async function loadKampalaIfNeeded(){
-  if (kampalaGeo) {
-    // ensure layers match toggles
-    ensureKampalaLayersFromSource();
-    return;
-  }
-
-  try {
-    const res = await fetch(KAMPALA_FILE);
-    kampalaGeo = await res.json();
-    ensureKampalaLayersFromSource();
-  } catch(err) {
-    console.error("Failed to load Kampala file:", err);
-    document.getElementById("info-content").innerText = "Failed to load Kampala data.";
-  }
 }
 
-// -----------------------------
-// CREATE / UPDATE KAMPALA LAYERS BASED ON TOGGLES
-// -----------------------------
-function ensureKampalaLayersFromSource() {
-  // remove any existing layers first
-  hideKampalaLayers(false);
 
-  // Prepare feature collections by filtering the single source (kampalaGeo)
-  const feats = kampalaGeo.features || kampalaGeo; // defensive
-  const divisionsFC = { type:"FeatureCollection", features: feats.filter(f => f.properties && f.properties.CNAME2014) };
-  const subcountiesFC = { type:"FeatureCollection", features: feats.filter(f => f.properties && f.properties.SNAME2014) };
-  const parishesFC = { type:"FeatureCollection", features: feats.filter(f => f.properties && f.properties.PNAME2014) };
-  const villagesFC = { type:"FeatureCollection", features: feats.filter(f => f.properties && f.properties.VNAME2014) };
+// Render Kampala layers according to toggles
+function renderKampalaLayers() {
+  hideKampalaLayers();
 
-  // Divisions (default ON)
+  // group collections by admin unit
+  const feats = kampalaFeatures.features;
+  const divisions = feats.filter(f => f.properties.CNAME2014);
+  const subcounties = feats.filter(f => f.properties.SNAME2014);
+  const parishes = feats.filter(f => f.properties.PNAME2014);
+  const villages = feats.filter(f => f.properties.VNAME2014);
+
+  // Divisions
   if (chkDivisions.checked) {
-    layerDivisions = L.geoJSON(divisionsFC, {
+    layerDivisions = L.geoJSON(divisions, {
       style: styleDivision,
-      onEachFeature: function(f, l){
-        l.on("click", function(e){
-          const h = getHierarchyName(f.properties);
-          // highlight this feature briefly
-          highlightTemp(l, { color:"#cc0000", fillOpacity:0.12 });
-          // show village-first name if available
-          const hv = getHierarchyName(f.properties);
-          L.popup().setLatLng(e.latlng).setContent(`<b>${hv.level}:</b> ${hv.name}`).openOn(map);
-          document.getElementById("info-content").innerHTML = `<h3>${hv.name}</h3><div>Level: ${hv.level}</div>`;
+      onEachFeature: (f, l) => {
+        const h = getBestName(f.properties);
+        l.bindTooltip(h.name, {sticky:true, className:"hover-label"});
+        l.on("mouseover", () => tempHighlight(l));
+        l.on("mouseout", () => layerDivisions.resetStyle(l));
+        l.on("click", e => {
+          L.popup().setLatLng(e.latlng)
+            .setContent(`<b>${h.level}:</b> ${h.name}`)
+            .openOn(map);
+          document.getElementById("info-content").innerHTML =
+            `<h3>${h.name}</h3>Level: ${h.level}`;
         });
-        l.on("mouseover", ()=> l.setStyle({ weight:2.8 }));
-        l.on("mouseout", ()=> layerDivisions.resetStyle(l));
       }
     }).addTo(map);
   }
 
   // Subcounties
   if (chkSubcounties.checked) {
-    layerSubcounties = L.geoJSON(subcountiesFC, {
+    layerSubcounties = L.geoJSON(subcounties, {
       style: styleSubcounty,
-      onEachFeature: function(f, l){
-        l.on("click", function(e){
-          const hv = getHierarchyName(f.properties);
-          L.popup().setLatLng(e.latlng).setContent(`<b>${hv.level}:</b> ${hv.name}`).openOn(map);
-          document.getElementById("info-content").innerHTML = `<h3>${hv.name}</h3><div>Level: ${hv.level}</div>`;
+      onEachFeature: (f, l) => {
+        const h = getBestName(f.properties);
+        l.bindTooltip(h.name, {sticky:true, className:"hover-label"});
+        l.on("mouseover", () => tempHighlight(l));
+        l.on("mouseout", () => layerSubcounties.resetStyle(l));
+        l.on("click", e => {
+          L.popup().setLatLng(e.latlng)
+            .setContent(`<b>${h.level}:</b> ${h.name}`)
+            .openOn(map);
+          document.getElementById("info-content").innerHTML =
+            `<h3>${h.name}</h3>Level: ${h.level}`;
         });
-        l.on("mouseover", ()=> l.setStyle({ weight:2.4 }));
-        l.on("mouseout", ()=> layerSubcounties.resetStyle(l));
       }
     }).addTo(map);
   }
 
   // Parishes
   if (chkParishes.checked) {
-    layerParishes = L.geoJSON(parishesFC, {
+    layerParishes = L.geoJSON(parishes, {
       style: styleParish,
-      onEachFeature: function(f, l){
-        l.on("click", function(e){
-          const hv = getHierarchyName(f.properties);
-          L.popup().setLatLng(e.latlng).setContent(`<b>${hv.level}:</b> ${hv.name}`).openOn(map);
-          document.getElementById("info-content").innerHTML = `<h3>${hv.name}</h3><div>Level: ${hv.level}</div>`;
+      onEachFeature: (f, l) => {
+        const h = getBestName(f.properties);
+        l.bindTooltip(h.name, {sticky:true, className:"hover-label"});
+        l.on("mouseover", () => tempHighlight(l));
+        l.on("mouseout", () => layerParishes.resetStyle(l));
+        l.on("click", e => {
+          L.popup().setLatLng(e.latlng)
+            .setContent(`<b>${h.level}:</b> ${h.name}`)
+            .openOn(map);
+          document.getElementById("info-content").innerHTML =
+            `<h3>${h.name}</h3>Level: ${h.level}`;
         });
-        l.on("mouseover", ()=> l.setStyle({ weight:2.2 }));
-        l.on("mouseout", ()=> layerParishes.resetStyle(l));
       }
     }).addTo(map);
   }
 
   // Villages
   if (chkVillages.checked) {
-    layerVillages = L.geoJSON(villagesFC, {
+    layerVillages = L.geoJSON(villages, {
       style: styleVillage,
-      onEachFeature: function(f, l){
-        l.on("click", function(e){
-          const hv = getHierarchyName(f.properties); // village-first
-          L.popup().setLatLng(e.latlng).setContent(`<b>${hv.level}:</b> ${hv.name}`).openOn(map);
-          document.getElementById("info-content").innerHTML = `<h3>${hv.name}</h3><div>Level: ${hv.level}</div>`;
+      onEachFeature: (f, l) => {
+        const h = getBestName(f.properties);
+        l.bindTooltip(h.name, {sticky:true, className:"hover-label"});
+        l.on("mouseover", () => tempHighlight(l));
+        l.on("mouseout", () => layerVillages.resetStyle(l));
+        l.on("click", e => {
+          L.popup().setLatLng(e.latlng)
+            .setContent(`<b>${h.level}:</b> ${h.name}`)
+            .openOn(map);
+          document.getElementById("info-content").innerHTML =
+            `<h3>${h.name}</h3>Level: ${h.level}`;
         });
-        l.on("mouseover", ()=> l.setStyle({ weight:1.8 }));
-        l.on("mouseout", ()=> layerVillages.resetStyle(l));
       }
     }).addTo(map);
   }
 }
 
-// -----------------------------
-// HIDE / REMOVE KAMPALA LAYERS
-// -----------------------------
-function hideKampalaLayers(removeSource=true){
-  if (layerDivisions) { try{ map.removeLayer(layerDivisions);}catch(e){} layerDivisions=null; }
-  if (layerSubcounties) { try{ map.removeLayer(layerSubcounties);}catch(e){} layerSubcounties=null; }
-  if (layerParishes) { try{ map.removeLayer(layerParishes);}catch(e){} layerParishes=null; }
-  if (layerVillages) { try{ map.removeLayer(layerVillages);}catch(e){} layerVillages=null; }
 
-  if (removeSource) {
-    kampalaGeo = kampalaGeo || null; // keep source in memory (do not delete to allow re-toggle)
+//-----------------------------------------------------
+// COUNTRY DISTRICTS
+//-----------------------------------------------------
+let districtsLayer = null;
+let selectedDistrict = null;
+
+fetch(COUNTRY_FILE)
+  .then(r => r.json())
+  .then(geo => {
+    districtsLayer = L.geoJSON(geo, {
+      style: {color:"#333", weight:1, fillColor:"#cce5ff", fillOpacity:0.6},
+      onEachFeature: (f, l) => {
+
+        l.on("mouseover", () => {
+          l.setStyle({fillColor:"#99ccff"});
+        });
+
+        l.on("mouseout", () => {
+          if (selectedDistrict !== l) districtsLayer.resetStyle(l);
+        });
+
+        l.on("click", e => {
+
+          // highlight district
+          if (selectedDistrict) districtsLayer.resetStyle(selectedDistrict);
+          selectedDistrict = l;
+          l.setStyle({weight:3, color:"#00aa00", fillColor:"#ccffcc", fillOpacity:0.7});
+
+          const dname =
+            (f.properties.DNAME2014 || f.properties.NAME_1 ||
+             f.properties.NAME_2 || "Unknown").toUpperCase();
+
+          document.getElementById("info-content").innerHTML =
+            `<h3>${dname}</h3>District selected.`;
+
+          if (dname.includes("KAMPALA")) loadKampala();
+          else hideKampalaLayers();
+        });
+      }
+    }).addTo(map);
+  });
+
+
+//-----------------------------------------------------
+// LOAD KAMPALA ONCE
+//-----------------------------------------------------
+function loadKampala() {
+  if (kampalaFeatures) {
+    renderKampalaLayers();
+    return;
   }
+
+  fetch(KAMPALA_FILE)
+    .then(r => r.json())
+    .then(j => {
+      kampalaFeatures = j;
+      renderKampalaLayers();
+    });
 }
-
-// -----------------------------
-// TOGGLE CHECKBOX LISTENERS
-// -----------------------------
-chkDivisions.addEventListener("change", () => {
-  // if toggles change while active layer shown, recreate layers
-  if (kampalaGeo) { ensureKampalaLayersFromSource(); }
-});
-
-chkSubcounties.addEventListener("change", () => { if (kampalaGeo) ensureKampalaLayersFromSource(); });
-chkParishes.addEventListener("change", () => { if (kampalaGeo) ensureKampalaLayersFromSource(); });
-chkVillages.addEventListener("change", () => { if (kampalaGeo) ensureKampalaLayersFromSource(); });
-
-// -----------------------------
-// End of script
-// -----------------------------
