@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Uganda Interactive Map</title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <meta charset="utf-8" />
+    <title>Kampala Admin Explorer</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 
 <body>
@@ -14,23 +12,21 @@
 <div id="map"></div>
 
 <div id="sidebar">
-    <h2>District Information</h2>
+    <h2>Administrative Layers</h2>
 
-    <h3>Show Kampala Layers</h3>
-
-    <label><input type="checkbox" id="chk-divisions"> Divisions</label><br>
-    <label><input type="checkbox" id="chk-subcounties"> Subcounties</label><br>
-    <label><input type="checkbox" id="chk-parishes"> Parishes</label><br>
-    <label><input type="checkbox" id="chk-villages" checked> Villages</label><br>
+    <label><input type="radio" name="level" value="division" checked> Divisions</label><br>
+    <label><input type="radio" name="level" value="subcounty"> Subcounties</label><br>
+    <label><input type="radio" name="level" value="parish"> Parishes</label><br>
+    <label><input type="radio" name="level" value="village"> Villages</label><br>
 
     <hr>
-    <div id="info-content">
-        Click on a district to see details.
-    </div>
+
+    <h3 id="unit-title">Select an area</h3>
+    <div id="unit-info"></div>
+
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
-
-
