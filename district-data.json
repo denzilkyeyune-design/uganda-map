@@ -1,14 +1,22 @@
 {
   "ABIM": {
+    "origin": "Named after the Abim people...",
+    "year_created": "2006",
     "population": "109,039",
-    "households": "18,297",
-    "literacy": "55%"
+    "schools": "155",
+    "hospitals": "7",
+    "notes": "Located in the Karamoja subregion..."
   },
-  "KAMPALA": {
-    "population": "1,680,000",
-    "households": "420,000",
-    "literacy": "88%"
+
+  "KASESE": {
+    "origin": "Named after the Lukonzo word 'Ekasesa' meaning...",
+    "year_created": "1974",
+    "population": "694,992",
+    "schools": "420",
+    "hospitals": "14",
+    "notes": "Home to Rwenzori Mountains National Park."
   }
 }
+
 
 
