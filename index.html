@@ -1,35 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Uganda Map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Uganda Map — Kampala Drilldown</title>
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="style.css"/>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="style.css"/>
 </head>
-
 <body>
 
-    <!-- Basemap Toggle Button -->
-    <div id="basemap-toggle" class="map-control">
-        <button id="toggleBasemap">🗺️ Basemap: ON</button>
+  <!-- Basemap toggle -->
+  <div id="basemap-toggle" class="map-control">
+    <button id="toggleBasemap">🗺️ Basemap: ON</button>
+  </div>
+
+  <!-- Info Sidebar -->
+  <div id="info-panel">
+    <div id="controls">
+      <button id="btn-back" style="display:none;">← Back</button>
+      <button id="btn-reset" title="Reset map">Reset</button>
     </div>
+    <h2 id="title">District Information</h2>
+    <div id="info-content">Click a district to begin (click Kampala to load its layers).</div>
+  </div>
 
-    <!-- Info Sidebar -->
-    <div id="info-panel">
-        <h2>District Information</h2>
-        <div id="info-content">Click a district to view details.</div>
-    </div>
+  <!-- Map -->
+  <div id="map"></div>
 
-    <!-- Map Container -->
-    <div id="map"></div>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script src="script.js"></script>
-
+  <script src="script.js"></script>
 </body>
 </html>
