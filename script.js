@@ -6,14 +6,14 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18
 }).addTo(map);
 
-// Load district info
+// Load district info (correct filename!)
 let districtInfo = {};
 
-fetch("district-info.json")
+fetch("district-data.json")
   .then(res => res.json())
   .then(data => districtInfo = data);
 
-// Load Uganda district GeoJSON
+// Load Uganda district GeoJSON (correct filename!)
 fetch("district_boundaries_2014.geojson")
   .then(res => res.json())
   .then(data => {
@@ -34,9 +34,9 @@ fetch("district_boundaries_2014.geojson")
               if (info) {
                 document.getElementById("info-content").innerHTML = `
                   <strong>${name}</strong><br><br>
-                  Population: ${info.population}<br>
-                  Households: ${info.households}<br>
-                  Literacy: ${info.literacy}<br>
+                  Population: ${info.population || "N/A"}<br>
+                  Households: ${info.households || "N/A"}<br>
+                  Literacy: ${info.literacy || "N/A"}<br>
                 `;
               } else {
                 document.getElementById("info-content").innerHTML = `
