@@ -1,84 +1,109 @@
 let map = L.map("map").setView([0.35, 32.58], 12);
 
-// Basemap
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+// ----- Basemap Layer -----
+let basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19
 }).addTo(map);
 
-// Layers
-let currentLayer = null;
+document.getElementById("basemapToggle").addEventListener("change", function () {
+    if (this.checked) basemap.addTo(map);
+    else basemap.remove();
+});
 
-// Load Kampala JSON once
+// ----- Layer Storage -----
+let currentLayer = null;
 let kampalaData = null;
 
+// Load the Kampala GeoJSON
 fetch("Kampala District.json")
     .then(res => res.json())
     .then(json => {
         kampalaData = json;
-        loadLevel("division"); // Default view
+        loadLevel("division");
     });
 
-// FILTER BY ADMIN LEVEL
+
+// ========================================
+//  LOAD A SPECIFIC ADMIN LEVEL
+// ========================================
 function loadLevel(level) {
+
+    if (!kampalaData) return;
 
     // Remove previous layer
     if (currentLayer) map.removeLayer(currentLayer);
 
-    // Choose which property to use
-    let field = {
-        "division": "CNAME2014",
-        "subcounty": "SNAME2014",
-        "parish": "PNAME2014",
-        "village": "VNAME2014"
-    }[level];
+    // Field mappings
+    const fieldMap = {
+        division: "CNAME2014",
+        subcounty: "SNAME2014",
+        parish: "PNAME2014",
+        village: "VNAME2014"
+    };
 
-    // Colour per level
-    let color = {
-        "division": "#0047ab",
-        "subcounty": "#009688",
-        "parish": "#ff9800",
-        "village": "#f44336"
-    }[level];
+    const colorMap = {
+        division: "#0047ab",
+        subcounty: "#009688",
+        parish: "#ff9800",
+        village: "#e91e63"
+    };
 
-    // Create filtered features
+    const field = fieldMap[level];
+    const color = colorMap[level];
+
+    // Add new layer
     currentLayer = L.geoJSON(kampalaData, {
+        filter: f => f.properties[field] && f.properties[field] !== "",
         style: {
             color: color,
-            weight: 1,
-            fillOpacity: 0.2
+            weight: 1.2,
+            fillOpacity: 0.20
         },
-        filter: f => f.properties[field] && f.properties[field] !== "",
+
         onEachFeature: (feature, layer) => {
 
             // Hover highlight
             layer.on("mouseover", function () {
-                this.setStyle({ weight: 3, fillOpacity: 0.4 });
+                this.setStyle({ weight: 3, fillOpacity: 0.35 });
             });
             layer.on("mouseout", function () {
-                this.setStyle({ weight: 1, fillOpacity: 0.2 });
+                this.setStyle({ weight: 1.2, fillOpacity: 0.20 });
             });
 
-            // Click - show info
+            // Click handler
             layer.on("click", function () {
-                let name = feature.properties[field];
+                const props = feature.properties;
+
+                const name = props[field];
                 document.getElementById("unit-title").innerHTML = name.toUpperCase();
+
+                // Sidebar info
                 document.getElementById("unit-info").innerHTML =
-                    `Admin level: ${level}<br>` +
-                    `District: ${feature.properties.DNAME2014}<br>` +
-                    `Division: ${feature.properties.CNAME2014}<br>` +
-                    `Subcounty: ${feature.properties.SNAME2014}<br>` +
-                    `Parish: ${feature.properties.PNAME2014}<br>` +
-                    `Village: ${feature.properties.VNAME2014}`;
+                    `<strong>District:</strong> ${props.DNAME2014}<br>` +
+                    `<strong>Division:</strong> ${props.CNAME2014}<br>` +
+                    `<strong>Subcounty:</strong> ${props.SNAME2014}<br>` +
+                    `<strong>Parish:</strong> ${props.PNAME2014}<br>` +
+                    `<strong>Village:</strong> ${props.VNAME2014 ?? "—"}`;
+
+                // Breadcrumb
+                document.getElementById("breadcrumb").innerHTML =
+                    `${props.DNAME2014} → ${props.CNAME2014} → ${props.SNAME2014} → ${props.PNAME2014} → ${props.VNAME2014}`;
+
+                // Auto zoom to polygon
+                map.fitBounds(layer.getBounds(), { maxZoom: 16 });
             });
         }
+
     }).addTo(map);
 }
 
-// Radio buttons — switch level
-document.querySelectorAll("input[name='level']").forEach(r => {
-    r.addEventListener("change", e => {
+
+// ========================================
+//  RADIO BUTTONS: SWITCH ADMIN LEVEL
+// ========================================
+document.querySelectorAll("input[name='level']").forEach(radio => {
+    radio.addEventListener("change", e => {
         loadLevel(e.target.value);
     });
 });
-
 
