@@ -1,43 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
-  <title>Uganda Interactive Map — Kampala Admin Levels</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kampala Interactive Map</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+  <!-- Turf.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
 </head>
 <body>
 
-<div id="container">
+<div id="map"></div>
 
-  <div id="map"></div>
+<div id="sidebar">
+  <h2>District Information</h2>
 
-  <div id="sidebar">
+  <h3>Show Kampala Layers</h3>
 
-    <div id="controls-top">
-      <button id="btn-reset">Reset</button>
-      <button id="btn-toggle-basemap">Basemap: ON</button>
-    </div>
+  <label><input type="checkbox" id="chkDivisions" /> Divisions</label><br>
+  <label><input type="checkbox" id="chkSubcounties" /> Subcounties</label><br>
+  <label><input type="checkbox" id="chkParishes" /> Parishes</label><br>
+  <label><input type="checkbox" id="chkVillages" checked /> Villages</label><br>
 
-    <h2 id="sidebar-title">District Information</h2>
+  <h3 id="districtName">KAMPALA</h3>
+  <div id="infoBox">District selected.</div>
 
-    <div id="layer-toggles">
-      <h3>Show Kampala Layers</h3>
-      <label><input type="checkbox" id="chk-divisions" checked> Divisions</label><br>
-      <label><input type="checkbox" id="chk-subcounties"> Subcounties</label><br>
-      <label><input type="checkbox" id="chk-parishes"> Parishes</label><br>
-      <label><input type="checkbox" id="chk-villages"> Villages</label><br>
-    </div>
-
-    <div id="info-content">Click any district. Click Kampala to load detailed admin units.</div>
-
-  </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="script.js"></script>
+<!-- Basemap Toggle -->
+<button id="basemapBtn">Basemap: ON</button>
 
+<script src="script.js"></script>
 </body>
 </html>
