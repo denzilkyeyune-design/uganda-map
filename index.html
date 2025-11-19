@@ -1,17 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Kampala Admin Explorer</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="utf-8">
+    <title>Uganda Interactive Map</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 </head>
 <body>
 
-<div id="map"></div>
+<div id="container">
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <h2 id="sidebar-title">District Information</h2>
+        <div id="info-content">Click any district to view details.</div>
+    </div>
+
+</div>
+
+<!-- Floating buttons -->
+<button id="toggle-basemap">Basemap: ON</button>
+<button id="reset-map">Reset</button>
+
 <script src="script.js"></script>
 
 </body>
 </html>
-
