@@ -2,12 +2,13 @@
   "ABIM": {
     "population": "109,039",
     "households": "18,297",
-    "region": "Northern"
+    "literacy": "55%"
   },
-  "KASESE": {
-    "population": "1,027,000",
-    "households": "230,000",
-    "region": "Western"
+  "KAMPALA": {
+    "population": "1,680,000",
+    "households": "420,000",
+    "literacy": "88%"
   }
 }
+
 
