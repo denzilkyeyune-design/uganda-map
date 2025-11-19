@@ -1,66 +1,60 @@
 // Create map
 var map = L.map('map').setView([1.3, 32.3], 7);
 
-// Add OpenStreetMap tiles
+// Tile layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
+    maxZoom: 18
 }).addTo(map);
 
-// Variable to store district data from JSON file
-let districtData = {};
+// Load district info
+let districtInfo = {};
 
-// Load district data
-fetch("district-data.json")
+fetch("district-info.json")
   .then(res => res.json())
-  .then(json => {
-    districtData = json;
-  });
+  .then(data => districtInfo = data);
 
-// Load GeoJSON
-fetch("uganda.json")
+// Load Uganda district GeoJSON
+fetch("uganda_districts.geojson")
   .then(res => res.json())
   .then(data => {
+      L.geoJSON(data, {
+        style: {
+          color: "#333",
+          weight: 1,
+          fillColor: "#cce5ff",
+          fillOpacity: 0.6
+        },
+        onEachFeature: function(feature, layer) {
+          layer.on("click", function() {
+              const name = feature.properties.DISTRICT || 
+                           feature.properties.DNAME2014 || 
+                           feature.properties.NAME_2 || 
+                           feature.properties.NAME_1;
+              
+              const info = districtInfo[name];
 
-    L.geoJSON(data, {
-      style: {
-        color: "#333",
-        weight: 1,
-        fillColor: "#cce5ff",
-        fillOpacity: 0.6
-      },
+              if (info) {
+                document.getElementById("info-content").innerHTML = `
+                  <strong>${name}</strong><br><br>
+                  Population: ${info.population}<br>
+                  Households: ${info.households}<br>
+                  Literacy: ${info.literacy}<br>
+                `;
+              } else {
+                document.getElementById("info-content").innerHTML = `
+                  <strong>${name}</strong><br>
+                  No data added yet.
+                `;
+              }
+          });
 
-      onEachFeature: function (feature, layer) {
-        layer.on("click", function () {
+          layer.on("mouseover", function() {
+              this.setStyle({ fillColor: "#99ccff" });
+          });
 
-          let districtName = feature.properties.NAME_1;
-
-          let info = districtData[districtName];
-
-          if (info) {
-            document.getElementById("info-content").innerHTML = `
-              <strong>${districtName}</strong><br><br>
-              <b>Population:</b> ${info.population}<br>
-              <b>Households:</b> ${info.households}<br>
-              <b>Literacy:</b> ${info.literacy}<br>
-            `;
-          } else {
-            document.getElementById("info-content").innerHTML = `
-              <strong>${districtName}</strong><br>
-              <b>No data added yet.</b><br>
-            `;
-          }
-
-        });
-
-        layer.on("mouseover", function () {
-          this.setStyle({ fillColor: "#99ccff" });
-        });
-
-        layer.on("mouseout", function () {
-          this.setStyle({ fillColor: "#cce5ff" });
-        });
-      }
-
-    }).addTo(map);
-
+          layer.on("mouseout", function() {
+              this.setStyle({ fillColor: "#cce5ff" });
+          });
+        }
+      }).addTo(map);
   });
