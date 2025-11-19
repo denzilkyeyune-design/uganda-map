@@ -1,7 +1,12 @@
 {
-  "Central Region": {
-    "population": "6,000,000",
-    "households": "1,500,000",
-    "literacy": "78%"
+  "Kampala": {
+    "population": "1,680,000",
+    "households": "420,000",
+    "literacy": "88%"
+  },
+  "Kasese": {
+    "population": "1,027,000",
+    "households": "230,000",
+    "literacy": "72%"
   }
 }
