@@ -1,56 +1,35 @@
-html, body {
-  height: 100%;
+body {
   margin: 0;
+  padding: 0;
+  overflow: hidden;
   font-family: Arial, sans-serif;
 }
 
-#container {
-  display: flex;
+#map {
+  width: 100vw;
   height: 100vh;
 }
 
-#map {
-  width: 75%;
-  height: 100%;
-}
-
 #sidebar {
-  width: 25%;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: white;
   padding: 15px;
-  background: #fff;
   overflow-y: auto;
-  border-left: 2px solid #ddd;
+  border-left: 2px solid #ccc;
 }
 
-#controls-top {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-#btn-reset,
-#btn-toggle-basemap {
+#basemapBtn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  background: white;
+  border: 1px solid #555;
   padding: 6px 10px;
-  border-radius: 6px;
-  border: none;
   cursor: pointer;
-  background: #007bff;
-  color: white;
 }
 
-#btn-reset {
-  background: #555;
-}
-
-#layer-toggles h3 {
-  margin-top: 10px;
-  margin-bottom: 5px;
-}
-
-.hover-label {
-  background: #ffffffdd;
-  padding: 2px 6px;
-  border: 1px solid #444;
-  border-radius: 3px;
-  font-size: 12px;
-}
