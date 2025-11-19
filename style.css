@@ -3,29 +3,39 @@ body {
     font-family: Arial, sans-serif;
 }
 
-/* Map */
+/* Map full screen minus sidebar */
 #map {
     height: 100vh;
-    width: 100vw;
+    width: calc(100vw - 350px);
+    float: right;
 }
 
-/* Information panel */
-#info-panel {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    width: 320px;
-    background: white;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    border-left: 4px solid #007bff;
-    z-index: 999999;
+/* Sidebar */
+#sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 350px;
+    height: 100vh;
+    background: #ffffff;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1000;
 }
 
-#info-panel h3 {
-    margin: 0 0 10px 0;
+#sidebar h2 {
+    margin-top: 0;
+    color: #0a7a32; /* deep green header */
 }
+
+#district-details {
+    margin-top: 15px;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+
 
 #info-content {
     font-size: 14px;
