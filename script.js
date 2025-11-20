@@ -1,80 +1,50 @@
-// ---------------------------
-//  MAP + BASEMAP
-// ---------------------------
+//-----------------------------------------------------
+// INITIALIZE MAP
+//-----------------------------------------------------
 var map = L.map("map").setView([1.3, 32.3], 8);
 
-var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19
-}).addTo(map);
+// Basemap (toggleable)
+var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 });
+osm.addTo(map);
 
-// Toggle basemap
-document.getElementById("basemapToggle").addEventListener("change", function () {
-    if (this.checked) map.addLayer(osm);
-    else map.removeLayer(osm);
-});
-
-// ---------------------------
-//  GENERIC HOVER HANDLER
-// ---------------------------
-function hoverStyle(e) {
-    var layer = e.target;
-    layer.setStyle({
-        weight: 3,
-        color: "#00FFFF",
-        fillOpacity: 0.3
-    });
-}
-
-function resetHover(e) {
-    regionsGroup.resetStyle(e.target);
-    districtsGroup.resetStyle(e.target);
-    kampalaGroup.resetStyle(e.target);
-    villagesGroup.resetStyle(e.target);
-}
-
-function onEachFeature(feature, layer) {
-    layer.on({
-        mouseover: hoverStyle,
-        mouseout: resetHover
-    });
-
-    // Popup showing NAME
-    let name =
-        feature.properties.ADM1_EN ||  // regions
-        feature.properties.DNAME2014 || // districts
-        feature.properties.PNAME2014 || // parishes/villages
-        feature.properties.NAME ||
-        "No name available";
-
-    layer.bindPopup("<b>" + name + "</b>");
-}
-
-// ---------------------------
-//  LAYER GROUPS
-// ---------------------------
+//-----------------------------------------------------
+// LAYER GROUPS
+//-----------------------------------------------------
 var regionsGroup = L.geoJSON(null, {
-    style: { color: "purple", weight: 2, fillOpacity: 0.1 },
-    onEachFeature: onEachFeature
+    style: { color: "#7b1fa2", weight: 2, fillOpacity: 0.05 },
+    onEachFeature: hoverFeature
 });
 
 var districtsGroup = L.geoJSON(null, {
-    style: { color: "blue", weight: 1.2, fillOpacity: 0.1 },
-    onEachFeature: onEachFeature
+    style: { color: "#1565c0", weight: 1, fillOpacity: 0.05 },
+    onEachFeature: hoverFeature
 });
 
 var kampalaGroup = L.geoJSON(null, {
-    style: { color: "darkgreen", weight: 2, fillOpacity: 0.15 },
-    onEachFeature: onEachFeature
+    style: { color: "#0d47a1", weight: 2, fillOpacity: 0.05 },
+    onEachFeature: hoverFeature
 });
 
 var villagesGroup = L.geoJSON(null, {
-    style: { color: "red", weight: 0.3, fillOpacity: 0.05 },
-    onEachFeature: onEachFeature
+    style: { color: "green", weight: 0.3, fillOpacity: 0.05 },
+    onEachFeature: hoverFeature
 });
 
-// ---------------------------
-//  LOAD DATA FILES
-// ---------------------------
+// Hover highlight function
+function hoverFeature(feature, layer) {
+    layer.on("mouseover", function () {
+        this.setStyle({ weight: 3, fillOpacity: 0.2 });
+    });
+    layer.on("mouseout", function () {
+        this.setStyle({ weight: 1, fillOpacity: 0.05 });
+    });
+}
+
+//-----------------------------------------------------
+// LOAD GEOJSON FILES
+//-----------------------------------------------------
+
+// 1. Load Regions
 fetch("Uganda Regional Boundaries.json")
     .then(res => res.json())
     .then(data => {
@@ -82,13 +52,15 @@ fetch("Uganda Regional Boundaries.json")
         console.log("Regions loaded");
     });
 
-fetch("Uganda District Boundaries 2014.json")
+// 2. Load All Districts
+fetch("Uganda District Boundaries 2014.geojson")
     .then(res => res.json())
     .then(data => {
         districtsGroup.addData(data);
         console.log("Districts loaded");
     });
 
+// 3. Load Kampala as a sub-layer
 fetch("Kampala District.json")
     .then(res => res.json())
     .then(data => {
@@ -96,6 +68,7 @@ fetch("Kampala District.json")
         console.log("Kampala loaded");
     });
 
+// 4. Load Villages
 fetch("Uganda Villages 2009.json")
     .then(res => res.json())
     .then(data => {
@@ -103,37 +76,39 @@ fetch("Uganda Villages 2009.json")
         console.log("Villages loaded");
     });
 
-// ---------------------------
-//  TOGGLE LAYERS
-// ---------------------------
+//-----------------------------------------------------
+// LAYER TOGGLES
+//-----------------------------------------------------
+
+// Basemap toggle
+document.getElementById("basemapToggle").addEventListener("change", function () {
+    if (this.checked) map.addLayer(osm);
+    else map.removeLayer(osm);
+});
+
+// Regions
 document.getElementById("regionsLayer").addEventListener("change", function () {
     if (this.checked) map.addLayer(regionsGroup);
     else map.removeLayer(regionsGroup);
 });
 
+// Districts
 document.getElementById("districtsLayer").addEventListener("change", function () {
-    if (this.checked) {
-        map.addLayer(districtsGroup);
-        map.addLayer(kampalaGroup); // Kampala is part of districts
-    } else {
-        map.removeLayer(districtsGroup);
-        map.removeLayer(kampalaGroup);
-    }
+    if (this.checked) map.addLayer(districtsGroup);
+    else map.removeLayer(districtsGroup);
 });
 
+// Kampala (subset of districts)
+document.getElementById("kampalaLayer").addEventListener("change", function () {
+    if (this.checked) map.addLayer(kampalaGroup);
+    else map.removeLayer(kampalaGroup);
+});
+
+// Villages
 document.getElementById("villagesLayer").addEventListener("change", function () {
     if (this.checked) map.addLayer(villagesGroup);
     else map.removeLayer(villagesGroup);
 });
-
-// ---------------------------
-//  SEARCH BAR
-// ---------------------------
-var geocoder = L.Control.geocoder({
-    placeholder: "Search for a place…",
-    defaultMarkGeocode: true
-}).addTo(map);
-
 
 
 
