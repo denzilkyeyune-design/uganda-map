@@ -1,153 +1,129 @@
-// ============================
-// 1. CREATE MAP
-// ============================
+/***********************
+ * 1. INITIALIZE MAP
+ ***********************/
 var map = L.map("map").setView([1.3, 32.3], 8);
 
-// --- Basemap Layer ---
+// Basemap layer
 var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19
 }).addTo(map);
 
 
-// ============================
-// 2. LAYER GROUPS
-// ============================
-
-// Hover highlight style
-function highlightFeature(e) {
-    var layer = e.target;
-    layer.setStyle({
-        weight: 3,
-        color: "#ffcc00",
-        fillOpacity: 0.3
-    });
-}
-
-function resetHighlight(e) {
-    regionsGroup.resetStyle(e.target);
-    districtsGroup.resetStyle(e.target);
-    kampalaGroup.resetStyle(e.target);
-    villagesGroup.resetStyle(e.target);
-}
-
-function onEachFeature(feature, layer) {
-    layer.on({
-        mouseover: highlightFeature,
-        mouseout: resetHighlight
-    });
-
-    if (feature.properties) {
-        layer.bindTooltip(JSON.stringify(feature.properties), {
-            sticky: true,
-            className: "feature-label"
-        });
-    }
-}
-
-// ---- REGIONS ----
+/***********************
+ * 2. LAYER GROUPS
+ ***********************/
 var regionsGroup = L.geoJSON(null, {
-    style: { color: "purple", weight: 1.5, fillOpacity: 0.05 },
-    onEachFeature: onEachFeature
+    style: { color: "purple", weight: 2, fillOpacity: 0.05 }
 });
 
-// ---- DISTRICTS ----
 var districtsGroup = L.geoJSON(null, {
-    style: { color: "blue", weight: 1, fillOpacity: 0.05 },
-    onEachFeature: onEachFeature
+    style: { color: "blue", weight: 1.2, fillOpacity: 0.05 }
 });
 
-// ---- KAMPALA (subset of Districts) ----
-var kampalaGroup = L.geoJSON(null, {
-    style: { color: "green", weight: 2, fillOpacity: 0.1 },
-    onEachFeature: onEachFeature
+var kampalaDistrictGroup = L.geoJSON(null, {
+    style: { color: "darkblue", weight: 2, fillOpacity: 0.05 }
 });
 
-// ---- VILLAGES ----
 var villagesGroup = L.geoJSON(null, {
-    style: { color: "red", weight: 0.3, fillOpacity: 0.05 },
-    onEachFeature: onEachFeature
+    style: { color: "red", weight: 0.5, fillOpacity: 0.05 }
 });
 
 
-// ============================
-// 3. LOAD GEOJSON FILES
-// ============================
+/***********************
+ * 3. UNIVERSAL HOVER EFFECT
+ ***********************/
+function addHover(layer) {
+    layer.on("mouseover", function () {
+        this.setStyle({
+            weight: 3,
+            fillOpacity: 0.2
+        });
+    });
 
-// --- Regions ---
+    layer.on("mouseout", function () {
+        this.setStyle({
+            weight: layer.options.originalWeight || 1,
+            fillOpacity: 0.05
+        });
+    });
+}
+
+
+/***********************
+ * 4. LOAD REGIONS
+ ***********************/
 fetch("Uganda Regional Boundaries.json")
-    .then(r => r.json())
+    .then(res => res.json())
     .then(data => {
         regionsGroup.addData(data);
+        regionsGroup.eachLayer(addHover);
         console.log("Regions loaded");
     });
 
-// --- Districts ---
+
+/***********************
+ * 5. LOAD DISTRICTS
+ ***********************/
 fetch("Uganda District Boundaries 2014.json")
-    .then(r => r.json())
+    .then(res => res.json())
     .then(data => {
         districtsGroup.addData(data);
+        districtsGroup.eachLayer(addHover);
         console.log("Districts loaded");
     });
 
-// --- Kampala District (subset layer) ---
+
+/***********************
+ * 6. LOAD KAMPALA DISTRICT (SUBSET UNDER DISTRICTS)
+ ***********************/
 fetch("Kampala District.json")
-    .then(r => r.json())
+    .then(res => res.json())
     .then(data => {
-        kampalaGroup.addData(data);
-        console.log("Kampala loaded");
+        kampalaDistrictGroup.addData(data);
+        kampalaDistrictGroup.eachLayer(addHover);
+        console.log("Kampala District loaded");
     });
 
-// --- Villages ---
+
+/***********************
+ * 7. LOAD VILLAGES
+ ***********************/
 fetch("Uganda Villages 2009.json")
-    .then(r => r.json())
+    .then(res => res.json())
     .then(data => {
         villagesGroup.addData(data);
+        villagesGroup.eachLayer(addHover);
         console.log("Villages loaded");
     });
 
 
-// ============================
-// 4. TOGGLE LAYERS
-// ============================
-
-// Regions
+/***********************
+ * 8. LAYER TOGGLES
+ ***********************/
 document.getElementById("regionsLayer").addEventListener("change", function () {
     this.checked ? map.addLayer(regionsGroup) : map.removeLayer(regionsGroup);
 });
 
-// Districts
 document.getElementById("districtsLayer").addEventListener("change", function () {
-
-    if (this.checked) {
-        map.addLayer(districtsGroup);
-    } else {
-        map.removeLayer(districtsGroup);
-        map.removeLayer(kampalaGroup);  // hide Kampala if Districts off
-        document.getElementById("kampalaLayer").checked = false;
-    }
+    this.checked ? map.addLayer(districtsGroup) : map.removeLayer(districtsGroup);
 });
 
-// Kampala (subset)
-document.getElementById("kampalaLayer").addEventListener("change", function () {
-    this.checked ? map.addLayer(kampalaGroup) : map.removeLayer(kampalaGroup);
+document.getElementById("kampalaDistrict").addEventListener("change", function () {
+    this.checked ? map.addLayer(kampalaDistrictGroup) : map.removeLayer(kampalaDistrictGroup);
 });
 
-// Villages
 document.getElementById("villagesLayer").addEventListener("change", function () {
     this.checked ? map.addLayer(villagesGroup) : map.removeLayer(villagesGroup);
 });
 
-// ============================
-// 5. BASEMAP TOGGLE
-// ============================
-document.getElementById("basemapToggle").addEventListener("change", function () {
-    if (this.checked) {
-        map.addLayer(osm);
-    } else {
-        map.removeLayer(osm);
-    }
-});
 
+/***********************
+ * 9. BASEMAP TOGGLE
+ ***********************/
+document.getElementById("basemapToggle").addEventListener("change", function () {
+    if (this.checked) map.addLayer(osm);
+    else map.removeLayer(osm);
+});
 
 
 
