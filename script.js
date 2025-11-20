@@ -28,7 +28,7 @@ fetch("Uganda Regional Boundaries.json")
     });
 
 // Load Districts
-fetch("Uganda District Boundaries 2014.geojson")
+fetch("Uganda District Boundaries 2014.json")
     .then(res => res.json())
     .then(data => {
         districtsGroup.addData(data);
