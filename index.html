@@ -1,42 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title>Kampala Admin Explorer</title>
+  <title>Uganda Map</title>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
 </head>
 
 <body>
+  <div id="map"></div>
 
-<div id="map"></div>
-
-<!-- SIDEBAR (now top-right) -->
-<div id="sidebar">
-    <h2>Administrative Layers</h2>
-
-    <label><input type="radio" name="level" value="division" checked> Divisions</label>
-    <label><input type="radio" name="level" value="subcounty"> Subcounties</label>
-    <label><input type="radio" name="level" value="parish"> Parishes</label>
-    <label><input type="radio" name="level" value="village"> Villages</label>
-
-    <hr>
-
-    <h3>Basemap</h3>
-    <label><input type="checkbox" id="basemapToggle" checked> Basemap ON</label>
-
-    <hr>
-
-    <h3 id="unit-title">Select an area</h3>
-    <div id="unit-info"></div>
-
-    <hr>
-    <div id="breadcrumb"></div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="script.js"></script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
+
