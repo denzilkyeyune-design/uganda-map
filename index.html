@@ -1,24 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Uganda Regions Map</title>
+    <title>zstatsz</title>
     <meta charset="utf-8" />
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="style.css"/>
 
     <style>
-        #map {
-            height: 100vh;
-            width: 100vw;
+        body, html { margin:0; padding:0; height:100%; }
+        #map { height:100vh; width:100%; }
+
+        #layerPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 260px;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.3);
+            border-radius: 6px;
+            z-index: 9999;
         }
+        #layerPanel h3 { margin-top:0; }
     </style>
 </head>
 
 <body>
-    <div id="map"></div>
 
-    <script src="script.js"></script>
+<div id="map"></div>
+
+<div id="layerPanel">
+    <h3>Administrative Layers</h3>
+
+    <input type="checkbox" id="regionsLayer"> Regions<br>
+    <input type="checkbox" id="districtsLayer"> Districts<br>
+    <input type="checkbox" id="villagesLayer"> Villages<br>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+
 </body>
 </html>
-
