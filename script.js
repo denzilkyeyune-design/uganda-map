@@ -6,7 +6,7 @@ var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19
 }).addTo(map);
 
-// Layer groups
+// --- Layer Groups ---
 var regionsGroup = L.geoJSON(null, {
     style: { color: "purple", weight: 2, fillOpacity: 0.1 }
 });
@@ -19,39 +19,54 @@ var villagesGroup = L.geoJSON(null, {
     style: { color: "red", weight: 0.3, fillOpacity: 0.1 }
 });
 
-// Load Regions
+// Kampala needs its own group
+var kampalaGroup = L.geoJSON(null, {
+    style: { color: "green", weight: 2, fillOpacity: 0.1 }
+});
+
+
+// --- Load Regions ---
 fetch("Uganda Regional Boundaries.json")
     .then(res => res.json())
     .then(data => {
         regionsGroup.addData(data);
         console.log("Regions loaded");
-    });
+    })
+    .catch(err => console.error("Regions error:", err));
 
-// Load Districts
-fetch("Uganda District Boundaries 2014.json")
+
+// --- Load Districts ---
+fetch("Uganda District Boundaries 2014.geojson")
     .then(res => res.json())
     .then(data => {
         districtsGroup.addData(data);
         console.log("Districts loaded");
-    });
+    })
+    .catch(err => console.error("Districts error:", err));
 
-// Load Kampala
-fetch("Kampala District.geojson")
+
+// --- Load Kampala (correct filename!) ---
+fetch("Kampala District.json")
     .then(res => res.json())
     .then(data => {
         kampalaGroup.addData(data);
-        console.log("kampala loaded");
-    });
+        console.log("Kampala loaded");
+    })
+    .catch(err => console.error("Kampala error:", err));
 
-// Load Villages
+
+// --- Load Villages ---
 fetch("Uganda Villages 2009.json")
     .then(res => res.json())
     .then(data => {
         villagesGroup.addData(data);
         console.log("Villages loaded");
-    });
+    })
+    .catch(err => console.error("Villages error:", err));
 
-// Toggle Layers
+
+// --- Toggle Layers ---
+
 document.getElementById("regionsLayer").addEventListener("change", function () {
     if (this.checked) map.addLayer(regionsGroup);
     else map.removeLayer(regionsGroup);
@@ -62,15 +77,17 @@ document.getElementById("districtsLayer").addEventListener("change", function ()
     else map.removeLayer(districtsGroup);
 });
 
-document.getElementById("kampalaToggle").addEventListener("change", (e) => {
-    if (e.target.checked) map.addLayer(kampalaLayer);
-    else map.removeLayer(kampalaLayer);
+// Kampala toggle (corrected)
+document.getElementById("kampalaLayer").addEventListener("change", function () {
+    if (this.checked) map.addLayer(kampalaGroup);
+    else map.removeLayer(kampalaGroup);
 });
 
 document.getElementById("villagesLayer").addEventListener("change", function () {
     if (this.checked) map.addLayer(villagesGroup);
     else map.removeLayer(villagesGroup);
 });
+
 
 
 
