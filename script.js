@@ -12,7 +12,7 @@ var basemap = L.tileLayer(
 ).addTo(map);
 
 // Load regional boundaries GeoJSON
-fetch("Uganda_Regional_Boundaries.geojson")
+fetch("Uganda Regional Boundaries.geojson")
   .then(res => res.json())
   .then(data => {
 
