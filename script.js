@@ -35,6 +35,14 @@ fetch("Uganda District Boundaries 2014.geojson")
         console.log("Districts loaded");
     });
 
+// Load Kampala
+fetch("Kampala District.geojson")
+    .then(res => res.json())
+    .then(data => {
+        kampalaGroup.addData(data);
+        console.log("kampala loaded");
+    });
+
 // Load Villages
 fetch("Uganda Villages 2009.json")
     .then(res => res.json())
@@ -42,30 +50,6 @@ fetch("Uganda Villages 2009.json")
         villagesGroup.addData(data);
         console.log("Villages loaded");
     });
-
-//---------------------------------------------
-//  KAMPALA DISTRICT LAYER
-//---------------------------------------------
-const kampalaLayer = L.geoJSON(null, {
-    style: {
-        color: "#ff6600",
-        weight: 2,
-        fillOpacity: 0.15
-    },
-    onEachFeature: (feature, layer) => {
-        const name =
-            feature.properties.DNAME2014 ||
-            feature.properties.ADM1_EN ||
-            feature.properties.name ||
-            "Unknown";
-
-        layer.bindPopup(`<b>Kampala District</b><br>${name}`);
-    }
-}).addTo(map);
-
-loadGeoJSON("Kampala District.json", kampalaLayer, {
-    loadedMessage: "Kampala district loaded"
-});
 
 // Toggle Layers
 document.getElementById("regionsLayer").addEventListener("change", function () {
@@ -78,13 +62,15 @@ document.getElementById("districtsLayer").addEventListener("change", function ()
     else map.removeLayer(districtsGroup);
 });
 
+document.getElementById("kampalaToggle").addEventListener("change", (e) => {
+    if (e.target.checked) map.addLayer(kampalaLayer);
+    else map.removeLayer(kampalaLayer);
+});
+
 document.getElementById("villagesLayer").addEventListener("change", function () {
     if (this.checked) map.addLayer(villagesGroup);
     else map.removeLayer(villagesGroup);
 });
 
-document.getElementById("kampalaToggle").addEventListener("change", (e) => {
-    if (e.target.checked) map.addLayer(kampalaLayer);
-    else map.removeLayer(kampalaLayer);
-});
+
 
