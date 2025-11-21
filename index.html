@@ -1,69 +1,410 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>Uganda Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="style.css"/>
-
-    <!-- Search Control -->
-    <link 
-      rel="stylesheet" 
-      href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"
-    />
-
-    <style>
-        body { margin:0; padding:0; }
-        #map { height: 100vh; }
-
-        /* Sidebar */
-        #sidebar {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            z-index: 9999;
-            width: 260px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-        }
-        #sidebar input[type="checkbox"] {
-            margin-right: 6px;
-        }
-        #searchBox {
-            width: 100%;
-            padding: 5px;
-            margin-bottom: 10px;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>Uganda interactive map</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-sA+e2k0QFZ7kGk7k1Tzhkqv+gWb1z7vM0v7g7kX0z6s=" crossorigin=""/>
+  <style>
+    html,body,#map { height:100%; margin:0; padding:0; }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; }
+    #map { position: absolute; left:0; top:0; right:320px; bottom:0; }
+    /* Sidebar */
+    #sidebar {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 320px;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 10px rgba(0,0,0,0.15);
+      padding: 14px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    #sidebar h2 { margin-top:0; font-size:20px; }
+    .layer-controls { margin-bottom: 10px; }
+    .layer-controls label { display:block; margin:6px 0; cursor:pointer; }
+    #searchBox { width:100%; padding:6px; box-sizing:border-box; margin-bottom:8px; }
+    #infoTitle { font-weight:700; color:#1b5e20; margin:8px 0; }
+    #infoContent img { max-width:100%; height:auto; display:block; margin-bottom:8px; border-radius:4px; }
+    .btn { background:#1976d2; color:white; padding:6px 10px; border-radius:4px; display:inline-block; text-decoration:none; cursor:pointer; }
+    .small { font-size:12px; padding:4px 8px; }
+    .checkbox-nested { margin-left:18px; }
+    /* Small basemap button top-left */
+    .basemap-toggle {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      z-index: 1001;
+      background: rgba(255,255,255,0.9);
+      padding:6px 8px;
+      border-radius:4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .legend-note { font-size:12px; color:#444; margin-top:6px; }
+  </style>
 </head>
-
 <body>
-<div id="sidebar">
-    <h3>Administrative Layers</h3>
+  <div id="map"></div>
 
-    <input type="checkbox" id="basemapToggle" checked> Basemap <br>
+  <div class="basemap-toggle">
+    <label><input type="checkbox" id="basemapCheckbox" checked> Basemap</label>
+  </div>
 
-    <input type="text" id="searchBox" placeholder="Search layers…">
+  <div id="sidebar" role="complementary" aria-label="Map details">
+    <h2>Administrative Layers</h2>
 
-    <input type="checkbox" id="regionsLayer"> Regions <br>
-    <input type="checkbox" id="districtsLayer"> Districts <br>
+    <input id="searchBox" placeholder="Search (type district/village name)">
 
-    <div style="margin-left:20px;">
-        <input type="checkbox" id="kampalaLayer"> Kampala District <br>
+    <div class="layer-controls">
+      <label><input type="checkbox" id="regionsLayer"> Regions</label>
+      <label><input type="checkbox" id="districtsLayer"> Districts</label>
+      <div class="checkbox-nested">
+        <label style="font-weight:600;"><input type="checkbox" id="kampalaToggle"> Kampala District (subset)</label>
+      </div>
+      <label><input type="checkbox" id="divisionsLayer"> Divisions</label>
+      <label><input type="checkbox" id="subcountiesLayer"> Subcounties</label>
+      <label><input type="checkbox" id="parishesLayer"> Parishes</label>
+      <label><input type="checkbox" id="villagesLayer"> Villages</label>
     </div>
 
-    <input type="checkbox" id="villagesLayer"> Villages <br>
-</div>
+    <div class="legend-note">Tip: hover to highlight; click to open details. Use the search box to find a place.</div>
 
-<div id="map"></div>
+    <hr>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div id="infoPanel">
+      <div id="infoTitle">No selection</div>
+      <div id="infoContent">Click a polygon to see details about that administrative area.</div>
+    </div>
 
-<!-- Search Plugin -->
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <div style="height:40px;"></div>
+  </div>
 
-<script src="script.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j7fLr8pXp7p6wqz+5aG0m8q3xq6j6Nf9tmlS4qc=" crossorigin=""></script>
+
+  <!-- Turf (for optional union/grouping) -->
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
+  <script>
+  // ---------------------------
+  // Basic map + basemap tile
+  // ---------------------------
+  const map = L.map('map', { zoomControl: true }).setView([1.3, 32.3], 7);
+
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Basemap toggle
+  const basemapCheckbox = document.getElementById('basemapCheckbox');
+  basemapCheckbox.addEventListener('change', () => {
+    if (basemapCheckbox.checked) map.addLayer(osm); else map.removeLayer(osm);
+  });
+
+  // Utility: easy highlight and reset
+  function highlightStyle(level){
+    // level: regions/districts/divisions/subcounties/parishes/villages
+    const base = { weight: 3, color: '#0b6', dashArray: '', fillOpacity: 0.15 };
+    if(level === 'regions') base.color = '#6a1b9a';
+    if(level === 'districts') base.color = '#1565c0';
+    if(level === 'divisions') base.color = '#1b5e20';
+    if(level === 'subcounties') base.color = '#f57f17';
+    if(level === 'parishes') base.color = '#c62828';
+    if(level === 'villages') base.color = '#c2185b';
+    return base;
+  }
+
+  function resetStyleFor(layer, feature) {
+    // reactivate style for geojson layer (if built by L.geoJSON)
+    if (!layer || !layer.resetStyle) return;
+    try { layer.resetStyle(feature.target || feature); } catch(e) { /* ignore */ }
+  }
+
+  // ---------------------------
+  // Layer groups - keep references
+  // ---------------------------
+  let regionsLayer = L.geoJSON(null, {
+    style: () => ({ color:'#6a1b9a', weight:2, fillOpacity:0.08 }),
+    onEachFeature: makeOnEach('regions')
+  });
+
+  let districtsLayer = L.geoJSON(null, {
+    style: () => ({ color:'#1565c0', weight:1.6, fillOpacity:0.06 }),
+    onEachFeature: makeOnEach('districts')
+  });
+
+  // Kampala group (will show only Kampala features)
+  let kampalaLayer = L.geoJSON(null, {
+    style: () => ({ color:'#1b5e20', weight:2.5, fillOpacity:0.06 }),
+    onEachFeature: makeOnEach('districts') // same handlers so it highlights
+  });
+
+  // For administrative subdivisions we will create layers that can contain merged polygons or raw polygons
+  let divisionsLayer = L.geoJSON(null, { style: () => ({ color:'#1b5e20', weight:2, fillOpacity:0.05 }), onEachFeature: makeOnEach('divisions') });
+  let subcountiesLayer = L.geoJSON(null, { style: () => ({ color:'#f57f17', weight:2, fillOpacity:0.04 }), onEachFeature: makeOnEach('subcounties') });
+  let parishesLayer = L.geoJSON(null, { style: () => ({ color:'#c62828', weight:1.2, fillOpacity:0.03 }), onEachFeature: makeOnEach('parishes') });
+  let villagesLayer = L.geoJSON(null, { style: () => ({ color:'#c2185b', weight:0.8, fillOpacity:0.015 }), onEachFeature: makeOnEach('villages') });
+
+  // a simple info popup layer (optional)
+  let popup = L.popup({ maxWidth: 320 });
+
+  // ---------------------------
+  // Helper to create onEachFeature handlers
+  // ---------------------------
+  function makeOnEach(level) {
+    return function(feature, layer) {
+      // Compose a label (try common property names)
+      const props = feature.properties || {};
+      const name = props.VNAME2014 || props.PNAME2014 || props.SNAME2014 || props.DNAME2014 || props.ADM1_EN || props.name || props.NAME || 'Unknown';
+      layer.bindTooltip(name, { sticky:true, direction:'auto' });
+
+      layer.on('mouseover', function(e){
+        layer.setStyle(highlightStyle(level));
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+          layer.bringToFront && layer.bringToFront();
+        }
+      });
+      layer.on('mouseout', function(e){
+        // reset style: if this layer is one of our L.geoJSON instances, call resetStyle
+        if (level === 'regions') resetStyleFor(regionsLayer, e);
+        if (level === 'districts') { resetStyleFor(districtsLayer, e); resetStyleFor(kampalaLayer, e); }
+        if (level === 'divisions') resetStyleFor(divisionsLayer, e);
+        if (level === 'subcounties') resetStyleFor(subcountiesLayer, e);
+        if (level === 'parishes') resetStyleFor(parishesLayer, e);
+        if (level === 'villages') resetStyleFor(villagesLayer, e);
+      });
+
+      layer.on('click', function(e){
+        const props = feature.properties || {};
+        const title = props.VNAME2014 || props.PNAME2014 || props.SNAME2014 || props.DNAME2014 || props.ADM1_EN || 'Selected';
+        const details = [];
+        // Populate fields you care about - adjust property keys if your file differs
+        if(props.PNAME2014) details.push(`<strong>Parish:</strong> ${props.PNAME2014}`);
+        if(props.SNAME2014) details.push(`<strong>Subcounty/Division:</strong> ${props.SNAME2014}`);
+        if(props.DNAME2014) details.push(`<strong>District:</strong> ${props.DNAME2014}`);
+        if(props.ADM1_EN) details.push(`<strong>Region:</strong> ${props.ADM1_EN}`);
+        if(props.PCODE2014) details.push(`<strong>Parish code:</strong> ${props.PCODE2014}`);
+        if(props.VNAME2014) details.push(`<strong>Village:</strong> ${props.VNAME2014}`);
+        if (props.POP_2014) details.push(`<strong>Population (2014):</strong> ${props.POP_2014}`);
+        // show sample image if property exists (URL), else placeholder
+        let imageHtml = '';
+        if(props.image || props.photo_url) {
+          imageHtml = `<img src="${props.image || props.photo_url}" alt="${title}">`;
+        } else {
+          // placeholder small map-pin image or empty
+          imageHtml = ''; // you can add a generic placeholder if you want
+        }
+
+        document.getElementById('infoTitle').innerText = title;
+        document.getElementById('infoContent').innerHTML = imageHtml + details.join('<br>') + '<br><br><em>Click another polygon to update.</em>';
+
+        // optionally pan to feature center but do NOT zoom strongly (user asked not necessarily zoom)
+        const bounds = layer.getBounds ? layer.getBounds() : null;
+        if(bounds && bounds.isValid && bounds.isValid()) {
+          map.fitBounds(bounds.pad(0.5), { maxZoom: 14, animate: true });
+        }
+      });
+    };
+  }
+
+  // ---------------------------
+  // Fetch and load GeoJSON files
+  // ---------------------------
+  // utility to fetch safely and add to layer
+  async function fetchAndAdd(url, targetLayer, filterFn) {
+    try {
+      const res = await fetch(url);
+      if(!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+      const geojson = await res.json();
+      // optional filter
+      if (filterFn) {
+        const filtered = { ...geojson };
+        filtered.features = geojson.features.filter(filterFn);
+        targetLayer.addData(filtered);
+      } else {
+        targetLayer.addData(geojson);
+      }
+      console.log(url, 'loaded');
+    } catch (err) {
+      console.error('Could not load', url, err);
+    }
+  }
+
+  // Regions
+  fetchAndAdd('Uganda Regional Boundaries.json', regionsLayer);
+
+  // Districts
+  fetchAndAdd('Uganda District Boundaries 2014.geojson', districtsLayer);
+
+  // Kampala district file: we will add to two places:
+  // - kampalaLayer: whole Kampala features
+  // - also create subdivision layers (divisions, subcounties, parishes, villages) from this file
+  fetch('Kampala District.json')
+    .then(r => {
+      if (!r.ok) throw new Error('Kampala file not found');
+      return r.json();
+    })
+    .then(data => {
+      // Add entire features to kampalaLayer
+      kampalaLayer.addData(data);
+
+      // We expect features in this Kampala file to have properties for VNAME2014 (village),
+      // PNAME2014 (parish), SNAME2014 (subcounty/division) and maybe NAME fields.
+      const features = data.features || [];
+
+      // 1) Villages: raw features (fine-grained)
+      const villagesGeo = { type: 'FeatureCollection', features: features.map(f => ({type:'Feature', geometry:f.geometry, properties:f.properties})) };
+      villagesLayer.addData(villagesGeo);
+
+      // 2) Parishes: try to group by PNAME2014 -> union them into single polygon per parish for clear demarcations
+      const parishesByName = {};
+      features.forEach(f => {
+        const key = f.properties.PNAME2014 || ('parish:' + (f.properties.PCODE2014 || 'unknown'));
+        parishesByName[key] = parishesByName[key] || [];
+        parishesByName[key].push(f);
+      });
+
+      // Try merging polygons per parish using turf.union (if possible); fallback to outline of first feature if merge fails
+      const mergedParishFeatures = [];
+      Object.keys(parishesByName).forEach(name => {
+        const list = parishesByName[name];
+        try {
+          // successive union
+          let accumulated = list[0].geometry;
+          for (let i=1;i<list.length;i++){
+            const a = turf.feature(accumulated);
+            const b = turf.feature(list[i].geometry);
+            const u = turf.union(a,b);
+            if(u && u.geometry) accumulated = u.geometry;
+          }
+          mergedParishFeatures.push({ type:'Feature', geometry: accumulated, properties: { displayName: name, ...list[0].properties } });
+        } catch(e) {
+          // fallback: use first feature shape
+          mergedParishFeatures.push({ type:'Feature', geometry: list[0].geometry, properties: { displayName: name, ...list[0].properties } });
+        }
+      });
+      parishesLayer.addData({ type:'FeatureCollection', features: mergedParishFeatures });
+
+      // 3) Subcounties/divisions: group by SNAME2014 and merge similarly
+      const subByName = {};
+      features.forEach(f => {
+        const key = f.properties.SNAME2014 || ('sub:' + (f.properties.SCODE2014 || 'unknown'));
+        subByName[key] = subByName[key] || [];
+        subByName[key].push(f);
+      });
+
+      const mergedSubFeatures = [];
+      Object.keys(subByName).forEach(name => {
+        const list = subByName[name];
+        try {
+          let accumulated = list[0].geometry;
+          for (let i=1;i<list.length;i++){
+            const a = turf.feature(accumulated);
+            const b = turf.feature(list[i].geometry);
+            const u = turf.union(a,b);
+            if(u && u.geometry) accumulated = u.geometry;
+          }
+          mergedSubFeatures.push({ type:'Feature', geometry: accumulated, properties: { displayName: name, ...list[0].properties } });
+        } catch(e) {
+          mergedSubFeatures.push({ type:'Feature', geometry: list[0].geometry, properties: { displayName: name, ...list[0].properties } });
+        }
+      });
+      subcountiesLayer.addData({ type:'FeatureCollection', features: mergedSubFeatures });
+
+      // 4) Divisions: if file has division/proper field (SNAME2014 might be divisions), attempt grouping same as above
+      // For simplicity, we reuse subcounties as divisions here if there's no separate division field.
+      divisionsLayer.addData({ type:'FeatureCollection', features: mergedSubFeatures });
+
+    })
+    .catch(err => console.error('Kampala load failed', err));
+
+  // Villages (nationwide file if any)
+  fetchAndAdd('Uganda Villages 2009.json', villagesLayer);
+
+  // ---------------------------
+  // Layer toggle UI bindings (checkboxes)
+  // ---------------------------
+  function checkboxToggle(id, layer) {
+    const cb = document.getElementById(id);
+    cb.addEventListener('change', function() {
+      if(this.checked) map.addLayer(layer); else map.removeLayer(layer);
+    });
+  }
+
+  checkboxToggle('regionsLayer', regionsLayer);
+  checkboxToggle('districtsLayer', districtsLayer);
+  checkboxToggle('kampalaToggle', kampalaLayer);
+  checkboxToggle('divisionsLayer', divisionsLayer);
+  checkboxToggle('subcountiesLayer', subcountiesLayer);
+  checkboxToggle('parishesLayer', parishesLayer);
+  checkboxToggle('villagesLayer', villagesLayer);
+
+  // Add initial layers as needed (none by default except basemap)
+  // But many users want districts visible; you can toggle initial behaviour here:
+  // document.getElementById('districtsLayer').checked = true; map.addLayer(districtsLayer);
+
+  // ---------------------------
+  // Simple search: search across loaded layers for matching name
+  // ---------------------------
+  const searchBox = document.getElementById('searchBox');
+  searchBox.addEventListener('keypress', function(e){
+    if(e.key === 'Enter') {
+      doSearch(searchBox.value.trim());
+    }
+  });
+
+  function doSearch(q) {
+    if(!q) return;
+    const ql = q.toLowerCase();
+    // search in district features first, then Kampala subdivisions, then villages
+    const checkList = [districtsLayer, kampalaLayer, parishesLayer, subcountiesLayer, villagesLayer, regionsLayer];
+    for(const layer of checkList) {
+      if(!layer || !layer.toGeoJSON) continue;
+      const gj = layer.toGeoJSON();
+      for(const feat of gj.features || []) {
+        const p = feat.properties || {};
+        const nameCandidates = [p.DNAME2014, p.VNAME2014, p.PNAME2014, p.SNAME2014, p.ADM1_EN, p.name, p.NAME].filter(Boolean);
+        for(const nm of nameCandidates) {
+          if(String(nm).toLowerCase().indexOf(ql) !== -1) {
+            // found - add the layer temporarily if not visible
+            const bounds = L.geoJSON(feat).getBounds();
+            if(bounds && bounds.isValid()) {
+              map.fitBounds(bounds.pad(0.6), { maxZoom: 14 });
+            }
+            // highlight briefly
+            const temp = L.geoJSON(feat, { style: { color:'#ff7800', weight:3 } }).addTo(map);
+            setTimeout(()=>map.removeLayer(temp), 3000);
+            // show info in sidebar
+            const title = nameCandidates[0] || 'Found';
+            document.getElementById('infoTitle').innerText = title;
+            document.getElementById('infoContent').innerHTML = `<strong>Matched:</strong> ${nameCandidates.join(' / ')}`;
+            return;
+          }
+        }
+      }
+    }
+    alert('No match found for: ' + q);
+  }
+
+  // ---------------------------
+  // Make sure map keeps layers accessible even if not toggled
+  // (we don't add them by default; checkboxes handle adding)
+  // ---------------------------
+
+  // ---------------------------
+  // Debug: add a small legend indicator pane (optional)
+  // ---------------------------
+  // Show helpful console logs when layers load
+  console.log('Map set up. Waiting for layers to load...');
+
+  // End of script
+  </script>
 </body>
 </html>
+
