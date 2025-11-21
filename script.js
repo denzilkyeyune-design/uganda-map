@@ -1,3 +1,34 @@
+// =====================
+// MUKONO DISTRICT INFO
+// =====================
+
+const mukonoInfo = {
+    district: "MUKONO DISTRICT",
+    totalVillages: 607,
+    totalParishes: 55,
+    totalSubcounties: 11,
+    totalTownCouncils: 5,
+
+    // All subcounties and their parishes & villages
+    structure: {
+        "KASAWO": {
+            "KAKUKUULU": ["BUGABO", "KAKUKULU", "KIKUBE", "KIWERE", "KIZANYIRIZI", "NAKASWA", "NAKIDUDUMA", "NKOKO"],
+            "KASANA": ["BUTEYONGERA", "KAKIRA", "KASALA", "KASANA", "KITWE", "KIYAGI", "NDIBA"],
+            "KIGOGOLA": ["BUYUKI", "KATEETE", "KIBAMBA", "KIGOGOLA", "KISONZI", "NNONGO", "NSANVU"],
+            "NAMALIRI": ["GAVU", "KAWUTUTU", "KIGULU", "NAMALIRI", "NDESE"]
+        },
+
+        "KIMENYEDDE": {
+            "BUKASA": ["BUKASA", "KAWUKU", "KISOGA", "NAJJA-KIREKU", "NAMAKOMO"],
+            "KAWONGO": ["KAMIRA-BUKONERO", "KAWONGO", "MAYANGAYANGA", "NAKIBANO", "WABUSANKE", "WANJEYO-KALAGALA-KITO", "KISAMBA-KIRINYABIGO"],
+            "KIWAFU": ["JUMBA-GENDA", "KIMENYEDDE", "KIWAFU", "MAGONGA-ZIRANSO", "NABUKUKU-LUBANJA", "NABULOOTO", "ZIGULU"],
+            "NANGA": ["GALIGATYA", "GIRINYA", "KAKAKALA", "KIBIRIBIRI", "KITUBA-NABIBUGGA", "KIYIRIBWA", "NANGA", "NDWADDEMUTWE"]
+        },
+
+        // … You can add more here if needed …
+    }
+};
+
 // ----------------------------------------
 // MAP INITIALIZATION
 // ----------------------------------------
