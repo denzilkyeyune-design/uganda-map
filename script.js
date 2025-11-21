@@ -1,140 +1,110 @@
-// ----------------------------
+// ----------------------------------------
 // MAP INITIALIZATION
-// ----------------------------
+// ----------------------------------------
 var map = L.map("map").setView([1.3, 32.3], 8);
 
-// Base layer
-var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+var basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19
 }).addTo(map);
 
-
-// ----------------------------
-// GENERIC HIGHLIGHT HANDLERS
-// ----------------------------
+// ----------------------------------------
+// LAYER GROUPS
+// ----------------------------------------
 function highlightFeature(e) {
     var layer = e.target;
-    layer.setStyle({ weight: 3, color: "yellow", fillOpacity: 0.4 });
+    layer.setStyle({ weight: 3, color: "yellow" });
 }
 
 function resetHighlight(e) {
-    var layer = e.target;
-    layer.setStyle(layer.defaultOptions.style);
+    regionsGroup.resetStyle(e.target);
+    districtsGroup.resetStyle(e.target);
+    kampalaGroup.resetStyle(e.target);
+    villagesGroup.resetStyle(e.target);
 }
 
-function onFeatureClick(feature, layer) {
-    document.getElementById("infoTitle").innerHTML = feature.properties.NAME || "Unknown";
-    document.getElementById("infoText").innerHTML =
-        `<b>Details:</b><br>${JSON.stringify(feature.properties, null, 2)}`;
-}
-
-
-// ----------------------------
-// CREATE LAYER GROUPS
-// ----------------------------
-function createLayer(styleColor) {
-    return L.geoJSON(null, {
-        style: { color: styleColor, weight: 1, fillOpacity: 0.1 },
-        onEachFeature: function (feature, layer) {
-            layer.defaultOptions = { style: { color: styleColor, weight: 1, fillOpacity: 0.1 } };
-            layer.on({
-                mouseover: highlightFeature,
-                mouseout: resetHighlight,
-                click: function () { onFeatureClick(feature, layer); }
-            });
+function onEachFeature(feature, layer) {
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: () => {
+            document.getElementById("selectedName").innerHTML = feature.properties.NAME || "Unknown";
+            document.getElementById("selectedDetails").innerHTML = JSON.stringify(feature.properties, null, 2);
         }
     });
 }
 
-var regionsGroup      = createLayer("purple");
-var districtsGroup    = createLayer("blue");
-var kampalaGroup      = createLayer("green");
-var divisionsGroup    = createLayer("orange");
-var subcountiesGroup  = createLayer("brown");
-var parishesGroup     = createLayer("darkred");
-var villagesGroup     = createLayer("black");
+var regionsGroup = L.geoJSON(null, {
+    style: { color: "purple", weight: 2, fillOpacity: 0.1 },
+    onEachFeature
+});
 
+var districtsGroup = L.geoJSON(null, {
+    style: { color: "blue", weight: 1, fillOpacity: 0.1 },
+    onEachFeature
+});
 
-// ----------------------------
-// FILE LOADING HELPERS
-// ----------------------------
-function loadLayer(filename, group, label) {
-    fetch(filename)
-        .then(r => r.json())
-        .then(json => {
-            group.addData(json);
-            console.log(label + " loaded");
-        })
-        .catch(err => console.warn("Error loading " + filename, err));
-}
+var kampalaGroup = L.geoJSON(null, {
+    style: { color: "orange", weight: 2, fillOpacity: 0.1 },
+    onEachFeature
+});
 
+var villagesGroup = L.geoJSON(null, {
+    style: { color: "green", weight: 0.3, fillOpacity: 0.3 },
+    onEachFeature
+});
 
-// ----------------------------
-// LOAD ALL FILES
-// (FILENAMES MUST MATCH EXACTLY AS IN YOUR REPO)
-// ----------------------------
+// ----------------------------------------
+// LOAD ALL DATA FILES (CORRECT FILENAMES)
+// ----------------------------------------
 loadLayer("Uganda Regional Boundaries.json", regionsGroup, "Regions");
-loadLayer("Uganda District Boundaries 2014.json", districtsGroup, "Districts");
+loadLayer("Uganda District Boundaries 2014.geojson", districtsGroup, "Districts");
 loadLayer("Kampala District.json", kampalaGroup, "Kampala");
 loadLayer("Uganda Villages 2009.json", villagesGroup, "Villages");
 
+function loadLayer(file, group, label) {
+    fetch(file)
+        .then(r => r.json())
+        .then(data => {
+            group.addData(data);
+            console.log(label + " loaded");
+        })
+        .catch(err => console.error("Failed: " + file, err));
+}
 
-// ----------------------------
-// LAYER TOGGLES
-// ----------------------------
+// ----------------------------------------
+// TOGGLE CONTROLS
+// ----------------------------------------
 document.getElementById("basemapToggle").onchange = e =>
-    e.target.checked ? map.addLayer(osm) : map.removeLayer(osm);
+    e.target.checked ? map.addLayer(basemap) : map.removeLayer(basemap);
 
 document.getElementById("regionsLayer").onchange = e =>
-    e.target.checked ? map.addLayer(regionsGroup) : map.removeLayer(regionsGroup);
+    toggleLayer(e, regionsGroup);
 
 document.getElementById("districtsLayer").onchange = e =>
-    e.target.checked ? map.addLayer(districtsGroup) : map.removeLayer(districtsGroup);
+    toggleLayer(e, districtsGroup);
 
 document.getElementById("kampalaLayer").onchange = e =>
-    e.target.checked ? map.addLayer(kampalaGroup) : map.removeLayer(kampalaGroup);
-
-document.getElementById("divisionsLayer").onchange = e =>
-    e.target.checked ? map.addLayer(divisionsGroup) : map.removeLayer(divisionsGroup);
-
-document.getElementById("subcountiesLayer").onchange = e =>
-    e.target.checked ? map.addLayer(subcountiesGroup) : map.removeLayer(subcountiesGroup);
-
-document.getElementById("parishesLayer").onchange = e =>
-    e.target.checked ? map.addLayer(parishesGroup) : map.removeLayer(parishesGroup);
+    toggleLayer(e, kampalaGroup);
 
 document.getElementById("villagesLayer").onchange = e =>
-    e.target.checked ? map.addLayer(villagesGroup) : map.removeLayer(villagesGroup);
+    toggleLayer(e, villagesGroup);
 
+function toggleLayer(e, group) {
+    if (e.target.checked) map.addLayer(group);
+    else map.removeLayer(group);
+}
 
-
-// ----------------------------
-// SEARCH FUNCTIONALITY
-// ----------------------------
+// ----------------------------------------
+// SEARCH BOX
+// ----------------------------------------
 document.getElementById("searchBox").addEventListener("input", function () {
-    var q = this.value.toLowerCase();
+    let q = this.value.toLowerCase();
 
-    if (!q) return;
-
-    var hit = null;
-
-    [
-        regionsGroup,
-        districtsGroup,
-        kampalaGroup,
-        divisionsGroup,
-        subcountiesGroup,
-        parishesGroup,
-        villagesGroup
-    ].forEach(group => {
+    [regionsGroup, districtsGroup, kampalaGroup, villagesGroup].forEach(group => {
         group.eachLayer(layer => {
-            if (!hit && layer.feature.properties.NAME &&
-                layer.feature.properties.NAME.toLowerCase().includes(q)) {
-                hit = layer;
-            }
+            let name = JSON.stringify(layer.feature.properties).toLowerCase();
+            if (name.includes(q)) layer.setStyle({ fillOpacity: 0.6 });
+            else layer.setStyle({ fillOpacity: 0.1 });
         });
     });
-
-    if (hit) map.fitBounds(hit.getBounds());
 });
-
