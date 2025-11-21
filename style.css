@@ -21,4 +21,17 @@
     z-index: 1;
 }
 
+/* Logo Styling */
+#logo-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 9999;
+}
+
+#logo {
+    width: 120px;   /* adjust size */
+    height: auto;
+    opacity: 0.95;
+}
 
