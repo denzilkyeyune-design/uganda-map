@@ -2,39 +2,65 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Uganda Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css" />
+    <title>Uganda Administrative Map</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="style.css"/>
+
+    <style>
+        body, html { margin:0; padding:0; height:100%; }
+        #map { height:100%; width:100%; }
+
+        #panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 9000;
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            width: 260px;
+            max-height: 90%;
+            overflow-y: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        #searchBox {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 6px;
+        }
+
+        h3 { margin-top:0; }
+        .layer-item { margin-bottom: 4px; }
+    </style>
 </head>
 
 <body>
 
 <div id="map"></div>
 
-<div id="sidebar">
-    <h2>Administrative Layers</h2>
+<div id="panel">
+    <h3>Administrative Layers</h3>
 
-    <label><input type="checkbox" id="basemapToggle" checked> Basemap</label>
+    <label><input type="checkbox" id="basemapToggle" checked> Basemap</label><br>
 
-    <input type="text" id="searchBox" placeholder="Search (district/village)…" />
+    <input type="text" id="searchBox" placeholder="Search (district/village)…">
 
-    <br><br>
+    <label class="layer-item"><input type="checkbox" id="regionsLayer"> Regions</label><br>
+    <label class="layer-item"><input type="checkbox" id="districtsLayer"> Districts</label><br>
+    <label class="layer-item"><input type="checkbox" id="kampalaLayer"> Kampala District (subset)</label><br>
+    <label class="layer-item"><input type="checkbox" id="divisionsLayer"> Divisions</label><br>
+    <label class="layer-item"><input type="checkbox" id="subcountiesLayer"> Subcounties</label><br>
+    <label class="layer-item"><input type="checkbox" id="parishesLayer"> Parishes</label><br>
+    <label class="layer-item"><input type="checkbox" id="villagesLayer"> Villages</label><br>
 
-    <label><input type="checkbox" id="regionsLayer"> Regions</label><br>
-    <label><input type="checkbox" id="districtsLayer"> Districts</label><br>
-    <label><input type="checkbox" id="kampalaLayer"> Kampala District (subset)</label><br>
-    <label><input type="checkbox" id="divisionsLayer"> Divisions</label><br>
-    <label><input type="checkbox" id="subcountiesLayer"> Subcounties</label><br>
-    <label><input type="checkbox" id="parishesLayer"> Parishes</label><br>
-    <label><input type="checkbox" id="villagesLayer"> Villages</label><br>
-
-    <p id="selectedInfo">No selection</p>
+    <hr>
+    <b id="infoTitle">No selection</b>
+    <p id="infoText">Click a polygon to see details.</p>
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
-
-
-
