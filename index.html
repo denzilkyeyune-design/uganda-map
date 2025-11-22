@@ -2,408 +2,346 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Interactive Uganda map — admin layers</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <title>Uganda map — admin viewer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-sA+4g3gQJwqjQG2T1p2kY2YfZqg3y4v9QmZ6b0s+gYQ=" crossorigin=""/>
-
+    integrity="sha256-sA+e2kXYw6r1wYH4a8r1mWqz3Q5w1V9gqv9g8m0sQmM=" crossorigin=""/>
   <style>
-    html,body,#map { height:100%; margin:0; padding:0; font-family: Arial, Helvetica, sans-serif;}
-    #map { position: absolute; top:0; left:0; right: 0; bottom:0; }
-
-    /* Controls container (top-right) */
-    .control-panel {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      padding: 10px;
-      width: 300px;
-      max-height: 80vh;
-      overflow: auto;
-      font-size: 13px;
-    }
-
-    .control-panel h3 { margin: 0 0 8px 0; font-size: 14px; }
-    .control-panel label { display:block; margin-bottom:6px; cursor:pointer; }
-
-    /* Info sidebar */
-    #info {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      z-index: 1000;
-      background: rgba(255,255,255,0.98);
-      border-radius: 6px;
-      padding: 12px;
-      width: 300px;
-      max-height: 70vh;
-      overflow:auto;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      font-size: 13px;
-    }
-
-    #logo {
-      width: 140px;
-      display:block;
-      margin-bottom: 8px;
-    }
-
-    .search {
-      display:flex;
-      gap:6px;
-      margin-bottom:8px;
-    }
-    .search input[type="text"] {
-      flex:1;
-      padding:6px 8px;
-      font-size:13px;
-    }
-    .search button {
-      padding:6px 8px;
-      font-size:13px;
-      cursor:pointer;
-    }
-
-    /* small helper for clickable list */
-    .layer-list { margin:8px 0; padding-left:10px; }
-    .layer-list input { margin-right:6px; }
-
-    /* ensure map controls don't cover our panels */
-    .leaflet-top.leaflet-left { z-index: 200; }
+    /* page layout */
+    html,body,#map { height:100%; margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; }
+    #map { position: absolute; top:0; left:0; right:320px; bottom:0; } /* leave room for right sidebar */
+    #sidebar { position:absolute; top:10px; right:10px; width:300px; bottom:10px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:16px; overflow:auto; border-radius:6px; z-index:1000; }
+    #logoControl { position:absolute; top:10px; left:10px; z-index:1000; background:transparent; }
+    .controlTitle{ font-weight:700; margin-bottom:6px; font-size:18px; color:#083; }
+    .smallNote{ font-size:12px; color:#666; margin-top:8px; }
+    label{ display:block; margin:6px 0; }
+    .checkbox-inline{ display:flex; align-items:center; gap:8px; margin:6px 0; }
+    input[type="text"].searchBox{ width:100%; padding:6px; border:1px solid #bbb; border-radius:3px; box-sizing:border-box; }
+    .infoHeader{ font-weight:bold; color:#127a2d; margin-top:12px; }
+    pre.props { background:#f9f9f9; padding:8px; border-radius:3px; font-size:13px; overflow:auto; max-height:220px; }
+    .linkDoc{ display:inline-block; margin-top:8px; color:#1a73e8; text-decoration:underline; }
+    .toggleRow{ display:flex; gap:8px; align-items:center; }
+    .radioRow{ margin-bottom:6px; }
+    .btnSmall{ padding:4px 8px; border-radius:3px; border:1px solid #bbb; background:#f3f3f3; cursor:pointer; }
   </style>
 </head>
 <body>
 
   <div id="map"></div>
 
-  <!-- Left info panel -->
-  <div id="info" aria-live="polite">
-    <img id="logo" src="logo.png" alt="sztatzs logo (replace logo.png)" />
-    <div id="info-content"><strong>Welcome</strong><br>Select a polygon on the map to see details here.</div>
-    <hr>
-    <div>
-      <a href="sandbox:/mnt/data/MUKONO DISTRICT LOCAL GOVERNMENT_0.docx" target="_blank">Open Mukono District document</a>
-      <p style="font-size:12px; color:#555; margin:6px 0 0 0;">(Document stored locally on the deployment environment.)</p>
-    </div>
+  <!-- Logo control top-left -->
+  <div id="logoControl">
+    <img id="siteLogo" src="bantustats.png" alt="logo" style="width:140px; height:auto; box-shadow:0 2px 6px rgba(0,0,0,0.2); border-radius:4px;">
   </div>
 
-  <!-- Right controls -->
-  <div class="control-panel" id="controls">
-    <h3>Map controls</h3>
-
-    <div class="search">
-      <input id="searchBox" type="text" placeholder="Search by name (village/parish/district)"/>
-      <button id="searchBtn">Find</button>
+  <!-- Sidebar right -->
+  <div id="sidebar">
+    <div class="controlTitle">Map controls</div>
+    <input type="text" id="searchBox" class="searchBox" placeholder="Search by name (village/parish/district)..." />
+    <div style="margin-top:8px;">
+      <label class="checkbox-inline"><input id="basemapCheckbox" type="checkbox" checked> Basemap (on/off)</label>
     </div>
 
-    <label><input type="checkbox" id="basemapToggle" checked /> Basemap (on/off)</label>
-
-    <h4 style="margin-top:10px; margin-bottom:6px;">Admin layer display (choose one)</h4>
-    <label><input type="radio" name="adminLevel" value="regions" /> Regions</label>
-    <label><input type="radio" name="adminLevel" value="districts" /> Districts</label>
-    <label><input type="radio" name="adminLevel" value="kampala" /> Kampala only</label>
-    <label><input type="radio" name="adminLevel" value="subcounties" /> Subcounties</label>
-    <label><input type="radio" name="adminLevel" value="parishes" /> Parishes</label>
-    <label><input type="radio" name="adminLevel" value="villages" checked /> Villages</label>
-
-    <h4 style="margin-top:10px; margin-bottom:6px;">Overlay toggles</h4>
-    <div class="layer-list">
-      <label><input type="checkbox" id="regionsLayer" /> Regions</label>
-      <label><input type="checkbox" id="districtsLayer" checked /> Districts</label>
-      <label><input type="checkbox" id="kampalaToggle" /> Kampala</label>
-      <label><input type="checkbox" id="subcountiesLayer" /> Subcounties</label>
-      <label><input type="checkbox" id="parishesLayer" /> Parishes</label>
-      <label><input type="checkbox" id="villagesLayer" checked /> Villages</label>
+    <div style="margin-top:10px;">
+      <div style="font-weight:700; margin-bottom:6px;">Admin layer display (choose one)</div>
+      <div class="radioRow"><label><input name="adminMode" value="regions" type="radio"> Regions</label></div>
+      <div class="radioRow"><label><input name="adminMode" value="districts" type="radio"> Districts</label></div>
+      <div class="radioRow"><label><input name="adminMode" value="kampala" type="radio"> Kampala only</label></div>
+      <div class="radioRow"><label><input name="adminMode" value="divisions" type="radio"> Divisions</label></div>
+      <div class="radioRow"><label><input name="adminMode" value="subcounties" type="radio"> Subcounties</label></div>
+      <div class="radioRow"><label><input name="adminMode" value="parishes" type="radio"> Parishes</label></div>
+      <div class="radioRow"><label><input name="adminMode" value="villages" type="radio" checked> Villages</label></div>
     </div>
+
+    <div style="margin-top:12px;">
+      <div style="font-weight:700;">Overlay toggles</div>
+      <label><input id="overlayRegions" type="checkbox"> Regions</label>
+      <label><input id="overlayDistricts" type="checkbox" checked> Districts</label>
+      <label><input id="overlayKampala" type="checkbox"> Kampala</label>
+      <label><input id="overlaySubcounties" type="checkbox"> Subcounties</label>
+      <label><input id="overlayParishes" type="checkbox"> Parishes</label>
+      <label><input id="overlayVillages" type="checkbox"> Villages</label>
+    </div>
+
+    <div class="smallNote">Tip: hover to highlight; click to open details. Use the search box to jump to a name.</div>
 
     <hr>
-    <div style="font-size:12px; color:#555;">
-      Tip: use the search box to jump to a name. Click polygons to view details. Hover to highlight.
-    </div>
+
+    <div id="selectionTitle" class="infoHeader">No selection</div>
+    <div id="selectionDetails">Click a polygon to see details about that administrative area.</div>
+    <a id="openMukono" class="linkDoc" href="/mnt/data/MUKONO DISTRICT LOCAL GOVERNMENT_0.docx" target="_blank">Open Mukono District document</a>
+
   </div>
 
-  <!-- Leaflet JS -->
+  <!-- Leaflet scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-o9N1j8f2kS1u3kH8v1ZQ9+QzHUFQp88a9aY5x6bM6kM=" crossorigin=""></script>
+    integrity="sha256-o9N1jC2RzG8q+Q5y8QmPjYzF7u0pQ7/3b5v6Y2vN8mM=" crossorigin=""></script>
 
   <script>
-    // ---------- baseline map ----------
-    var map = L.map('map', { preferCanvas: false }).setView([0.8, 32.5], 7);
+  /*******************************
+   * Map + UI logic (single file)
+   *******************************/
 
-    // Basemap tile layer
-    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+  // Create map
+  var map = L.map('map', { zoomControl:true }).setView([1.3, 32.5], 7);
 
-    // Keep references to layer groups
-    var regionsGroup = L.geoJSON(null, { style: styleRegions, onEachFeature: onEachFeature });
-    var districtsGroup = L.geoJSON(null, { style: styleDistricts, onEachFeature: onEachFeature });
-    var kampalaGroup = L.geoJSON(null, { style: styleKampala, onEachFeature: onEachFeature });
-    var subcountiesGroup = L.geoJSON(null, { style: styleSubcounties, onEachFeature: onEachFeature });
-    var parishesGroup = L.geoJSON(null, { style: styleParishes, onEachFeature: onEachFeature });
-    var villagesGroup = L.geoJSON(null, { style: styleVillages, onEachFeature: onEachFeature });
+  // Basemap (tileLayer variable so we can remove/add)
+  var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-    // style functions for clarity
-    function styleRegions(feature) {
-      return { color: '#6a0dad', weight: 2.5, fillOpacity: 0.05 };
-    }
-    function styleDistricts(feature) {
-      return { color: '#1f78b4', weight: 2, fillOpacity: 0.03 };
-    }
-    function styleKampala(feature) {
-      return { color: '#2ca02c', weight: 3, fillOpacity: 0.04 };
-    }
-    function styleSubcounties(feature) {
-      return { color: '#ff7f0e', weight: 1.8, fillOpacity: 0 };
-    }
-    function styleParishes(feature) {
-      return { color: '#9467bd', weight: 1.2, fillOpacity: 0 };
-    }
-    function styleVillages(feature) {
-      return { color: '#d62728', weight: 0.8, fillOpacity: 0.35 };
-    }
+  // Layer containers
+  var regionsGroup = L.geoJSON(null, { style: baseStyleRegions });
+  var districtsGroup = L.geoJSON(null, { style: baseStyleDistricts });
+  var kampalaGroup = L.geoJSON(null, { style: baseStyleKampala });
+  var divisionsGroup = L.geoJSON(null, { style: baseStyleDivisions });
+  var subcountiesGroup = L.geoJSON(null, { style: baseStyleSubcounties });
+  var parishesGroup = L.geoJSON(null, { style: baseStyleParishes });
+  var villagesGroup = L.geoJSON(null, { style: baseStyleVillages });
 
-    // highlight style
-    function highlightStyle(layer, keepFill) {
-      layer.setStyle({
-        weight: 3,
-        color: '#00b050',
-        dashArray: '',
-        fillOpacity: (keepFill ? 0.45 : 0.12)
-      });
-      if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) layer.bringToFront();
-    }
-    function resetHighlight(layer, originalStyleFn) {
-      layer.setStyle(originalStyleFn(layer.feature));
-    }
+  // currently displayed "main" group (one-of)
+  var currentMainGroup = villagesGroup;
 
-    // onEachFeature - hover and click behaviour
-    function onEachFeature(feature, layer) {
-      // set a readable label property to use in search + sidebar
-      layer.bindTooltip(feature.properties.VNAME2014 || feature.properties.DNAME2014 || feature.properties.NAME_2 || feature.properties.NAME || '', {sticky:true});
+  // Helper styles
+  function baseStyleRegions() { return { color:'#5b2e86', weight:2, fillOpacity:0.08 }; }
+  function baseStyleDistricts() { return { color:'#1f46b6', weight:1.5, fillOpacity:0.06 }; }
+  function baseStyleKampala() { return { color:'#0b8f3a', weight:2, fillOpacity:0.05 }; }
+  function baseStyleDivisions() { return { color:'#b12727', weight:1.0, fillOpacity:0.02 }; }
+  function baseStyleSubcounties() { return { color:'#ff7f00', weight:0.9, fillOpacity:0.02 }; }
+  function baseStyleParishes() { return { color:'#7a1fa2', weight:0.6, fillOpacity:0.02 }; }
+  function baseStyleVillages() { return { color:'#d32f2f', weight:0.4, fillOpacity:0.03 }; }
 
-      layer.on({
-        mouseover: function(e) {
-          highlightStyle(e.target, (layer.feature && (layer.feature.geometry.type === 'Polygon' || layer.feature.geometry.type === 'MultiPolygon')));
-        },
-        mouseout: function(e) {
-          // reset by calling correct style function depending on which group contains layer
-          resetToLayerDefault(e.target);
-        },
-        click: function(e) {
-          const props = feature.properties || {};
-          const name = props.VNAME2014 || props.PNAME2014 || props.DNAME2014 || props.NAME_2 || props.NAME || 'Unknown';
-          // show information in left panel
-          var infoHtml = '<strong>' + name + '</strong><br/><br/>';
-          Object.keys(props).forEach(k => {
-            // only show a few keys to keep tidy
-            if (['VNAME2014','PNAME2014','DNAME2014','POP_2014','HH2014'].includes(k)) {
-              infoHtml += '<b>' + k + '</b>: ' + props[k] + '<br/>';
-            }
-          });
-          infoHtml += '<hr/>';
-          // Add example of embedding an image area (user may replace with real images)
-          if (props.VNAME2014) {
-            // example: show placeholder portrait for political figure — user must host these images and name them consistently for auto-display
-            infoHtml += '<div><img src="placeholder_person.png" alt="person" style="width:120px;display:block;margin-bottom:6px"/></div>';
+  // highlight style used on hover or when "popping out"
+  var highlightStyle = { weight:3, color:'#2a9df4', fillOpacity:0.2 };
+
+  // global reference to last hovered layer
+  var lastHovered = null;
+
+  // function that will set up hover/click for a feature (re-usable)
+  function bindFeatureInteractions(layer, feature) {
+    layer.on({
+      mouseover: function(e) {
+        if (lastHovered && lastHovered !== e.target) {
+          try { lastHovered.setStyle(layer.defaultStyle || {}); } catch(err) {}
+        }
+        layer.defaultStyle = layer.defaultStyle || e.target.options;
+        e.target.setStyle(highlightStyle);
+        lastHovered = e.target;
+        map.getContainer().style.cursor = 'pointer';
+      },
+      mouseout: function(e) {
+        // reset to default style for that layer
+        try { e.target.setStyle(layer.defaultStyle || {}); } catch(err) {}
+        map.getContainer().style.cursor = '';
+      },
+      click: function(e) {
+        // do not zoom — just show info and "pop out" (bring to front and set style)
+        var props = feature.properties || {};
+        showFeatureInfo(props);
+        // style pop-out effect
+        try {
+          // reset previous popouts
+          if (lastPopout && lastPopout !== e.target) {
+            lastPopout.setStyle(lastPopoutDefaultStyle || {});
           }
-          infoHtml += '<div><a href="sandbox:/mnt/data/MUKONO DISTRICT LOCAL GOVERNMENT_0.docx" target="_blank">Open Mukono District document</a></div>';
-          document.getElementById('info-content').innerHTML = infoHtml;
+        } catch(ex){}
+        lastPopoutDefaultStyle = e.target.options;
+        e.target.setStyle({ weight:4, color:'#2e7d32', fillOpacity:0.25 });
+        lastPopout = e.target;
+      }
+    });
+  }
 
-          // visual "pop out" effect: temporarily increase style for this polygon
-          highlightStyle(layer, true);
+  var lastPopout = null, lastPopoutDefaultStyle = null;
 
-          // optionally do not zoom; but pan slightly to ensure it is visible
-          // map.panTo(e.latlng);
+  // show properties in sidebar
+  function showFeatureInfo(props) {
+    var title = props.DNAME2014 || props.DNAME || props.NAME || props.NAME_1 || props.DISTRICT || props.DNAME || "Unknown";
+    document.getElementById('selectionTitle').innerText = title;
+    var detailHtml = '<div style="font-weight:bold;color:#333;margin-top:6px;">Details:</div>';
+    detailHtml += '<pre class="props">' + JSON.stringify(props, null, 2) + '</pre>';
+    document.getElementById('selectionDetails').innerHTML = detailHtml;
+  }
+
+  // --- fetch geojson files (use encodeURI to handle spaces)
+  function safeFetch(filename) {
+    return fetch(encodeURI(filename)).then(res => {
+      if(!res.ok) throw new Error('Failed to load ' + filename + ' ('+res.status+')');
+      return res.json();
+    });
+  }
+
+  // Regions
+  safeFetch('Uganda Regional Boundaries.json')
+    .then(data => {
+      regionsGroup = L.geoJSON(data, {
+        style: baseStyleRegions,
+        onEachFeature: function(f, layer) { bindFeatureInteractions(layer, f); }
+      });
+      console.log('Regions loaded');
+      // if overlay box is checked, add
+      if(document.getElementById('overlayRegions').checked) regionsGroup.addTo(map);
+    }).catch(err=>console.warn(err.message));
+
+  // Districts
+  safeFetch('Uganda District Boundaries 2014.json')
+    .then(data => {
+      districtsGroup = L.geoJSON(data, {
+        style: baseStyleDistricts,
+        onEachFeature: function(f, layer) { bindFeatureInteractions(layer, f); }
+      });
+      console.log('Districts loaded');
+      if(document.getElementById('overlayDistricts').checked) districtsGroup.addTo(map);
+    }).catch(err=>console.warn(err.message));
+
+  // Kampala subset (a separate GeoJSON file — must exist)
+  safeFetch('Kampala District.json')
+    .then(data => {
+      kampalaGroup = L.geoJSON(data, {
+        style: baseStyleKampala,
+        onEachFeature: function(f, layer) { bindFeatureInteractions(layer, f); }
+      });
+      console.log('Kampala loaded');
+    }).catch(err=>console.warn(err.message));
+
+  // Villages
+  safeFetch('Uganda Villages 2009.json')
+    .then(data => {
+      villagesGroup = L.geoJSON(data, {
+        style: baseStyleVillages,
+        onEachFeature: function(f, layer) { bindFeatureInteractions(layer, f); }
+      });
+      console.log('Villages loaded');
+      if(document.getElementById('overlayVillages').checked) villagesGroup.addTo(map);
+    }).catch(err=>console.warn(err.message));
+
+  // (subcounties, parishes, divisions would be loaded similarly if you have separate files)
+  // For now we'll attempt to detect sub-layers inside the Districts or Villages if properties are present,
+  // otherwise you can add additional fetch(...) calls here.
+
+  // --- UI events
+
+  // Basemap toggle
+  document.getElementById('basemapCheckbox').addEventListener('change', function() {
+    if(this.checked) {
+      if(!map.hasLayer(osm)) osm.addTo(map);
+    } else {
+      if(map.hasLayer(osm)) map.removeLayer(osm);
+    }
+  });
+
+  // Overlay toggles (checkboxes)
+  document.getElementById('overlayRegions').addEventListener('change', function() {
+    if(this.checked) { if(regionsGroup) regionsGroup.addTo(map); }
+    else { if(regionsGroup) map.removeLayer(regionsGroup); }
+  });
+  document.getElementById('overlayDistricts').addEventListener('change', function() {
+    if(this.checked) { if(districtsGroup) districtsGroup.addTo(map); }
+    else { if(districtsGroup) map.removeLayer(districtsGroup); }
+  });
+  document.getElementById('overlayKampala').addEventListener('change', function() {
+    if(this.checked) { if(kampalaGroup) kampalaGroup.addTo(map); }
+    else { if(kampalaGroup) map.removeLayer(kampalaGroup); }
+  });
+  document.getElementById('overlayVillages').addEventListener('change', function() {
+    if(this.checked) { if(villagesGroup) villagesGroup.addTo(map); }
+    else { if(villagesGroup) map.removeLayer(villagesGroup); }
+  });
+
+  // Radio adminMode change (choose one main display)
+  function setAdminMode(mode) {
+    // remove current main group (if present)
+    try {
+      map.removeLayer(currentMainGroup);
+    } catch(e){}
+
+    // decide group
+    switch(mode) {
+      case 'regions': currentMainGroup = regionsGroup; break;
+      case 'districts': currentMainGroup = districtsGroup; break;
+      case 'kampala': currentMainGroup = kampalaGroup; break;
+      case 'divisions': currentMainGroup = divisionsGroup || villagesGroup; break;
+      case 'subcounties': currentMainGroup = subcountiesGroup || villagesGroup; break;
+      case 'parishes': currentMainGroup = parishesGroup || villagesGroup; break;
+      case 'villages': default: currentMainGroup = villagesGroup; break;
+    }
+    if(currentMainGroup) {
+      currentMainGroup.addTo(map);
+      // ensure visible style stands out by increasing weight temporarily
+      currentMainGroup.eachLayer(function(l){ try{ l.setStyle && l.setStyle({weight:1.6}); }catch(e){} });
+    }
+  }
+
+  // attach radio handlers
+  var radios = document.getElementsByName('adminMode');
+  for (var i=0;i<radios.length;i++){
+    radios[i].addEventListener('change', function(e){
+      setAdminMode(e.target.value);
+    });
+  }
+
+  // ensure the initial mode is set (villages)
+  setAdminMode('villages');
+
+  // Search box simple implementation: find first matching feature across loaded groups
+  document.getElementById('searchBox').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') doSearch();
+  });
+  function doSearch() {
+    var q = document.getElementById('searchBox').value.trim().toLowerCase();
+    if(!q) return alert('Type a search term (village, parish, district name). Press Enter.');
+    // combine groups to search
+    var groups = [villagesGroup, parishesGroup, subcountiesGroup, districtsGroup, regionsGroup, kampalaGroup];
+    for (var g=0; g<groups.length; g++) {
+      var group = groups[g];
+      if(!group || !group.eachLayer) continue;
+      var found = false;
+      group.eachLayer(function(layer) {
+        var props = layer.feature && layer.feature.properties || {};
+        // try several common name fields
+        var names = [props.VNAME2014, props.PNAME2014, props.SNAME2014, props.CNAME2014, props.DNAME2014,
+                     props.NAME, props.NAME_1, props.NAME_2, props.DISTRICT, props.NAME];
+        for(var ni=0; ni<names.length; ni++){
+          var nm = names[ni];
+          if(!nm) continue;
+          if(nm.toString().toLowerCase().indexOf(q) !== -1) {
+            // zoom / open info
+            var bounds = layer.getBounds ? layer.getBounds() : null;
+            if(bounds) map.fitBounds(bounds.pad(1.2));
+            showFeatureInfo(props);
+            // highlight briefly
+            try { layer.setStyle(highlightStyle); setTimeout(()=>layer.setStyle(layer.defaultStyle || {}), 2500); } catch(e) {}
+            found = true;
+            return;
+          }
         }
       });
+      if(found) return;
     }
+    alert('No match found for: ' + q);
+  }
 
-    // reset style helper: find which group contains the layer and call its style fn
-    function resetToLayerDefault(layer) {
-      // check ancestor groups via layer._map and containers (we keep references)
-      // We will attempt to use the layer's feature properties to infer style
-      var props = layer.feature && layer.feature.properties ? layer.feature.properties : {};
-      if (props.DNAME2014 || props.NAME_2 || props.NAME) {
-        // likely district/region
-        layer.setStyle(styleDistricts(layer.feature));
-      } else if (props.VNAME2014 || props.EANAME2014) {
-        layer.setStyle(styleVillages(layer.feature));
-      } else {
-        // fallback - try previous style functions
-        try { layer.setStyle({ color:'#666', weight:1, fillOpacity:0.1}); } catch(e) {}
-      }
-    }
+  // small helper to ensure map size updates if sidebar width changes or on load
+  setTimeout(()=>map.invalidateSize(), 600);
 
-    // -------------- data loading ----------------
-    // NOTE: ensure filenames match exactly what's on your Vercel deployment
-    function loadGeoJSON(url, targetGroup, onDone) {
-      fetch(url)
-        .then(res => {
-          if (!res.ok) throw new Error('Cannot load ' + url + ' (status ' + res.status + ')');
-          return res.json();
-        })
-        .then(data => {
-          targetGroup.addData(data);
-          if (onDone) onDone(null, data);
-        })
-        .catch(err => {
-          console.error('Error loading', url, err);
-          if (onDone) onDone(err);
-        });
-    }
+  // click outside to reset selection panel (optional)
+  map.on('click', function(){
+    document.getElementById('selectionTitle').innerText = 'No selection';
+    document.getElementById('selectionDetails').innerHTML = 'Click a polygon to see details about that administrative area.';
+  });
 
-    // LOAD files - edit these filenames if your files are named differently on Vercel
-    loadGeoJSON('Uganda Regional Boundaries.json', regionsGroup);
-    loadGeoJSON('Uganda District Boundaries 2014.json', districtsGroup);
-    // Kampala district geojson (must exist in deploy)
-    loadGeoJSON('Kampala District.json', kampalaGroup);
-    loadGeoJSON('Uganda Subcounties.json', subcountiesGroup);
-    loadGeoJSON('Uganda Parishes.json', parishesGroup);
-    loadGeoJSON('Uganda Villages 2009.json', villagesGroup);
+  // ensure logo is clickable (optional) -> bring user to home
+  document.getElementById('siteLogo').addEventListener('click', function(){ window.location.href = '/'; });
 
-    // -------------- display & toggles ----------------
-    // helper to clear a set of groups
-    function removeAllAdminGroups() {
-      map.removeLayer(regionsGroup);
-      map.removeLayer(districtsGroup);
-      map.removeLayer(kampalaGroup);
-      map.removeLayer(subcountiesGroup);
-      map.removeLayer(parishesGroup);
-      map.removeLayer(villagesGroup);
-    }
+  // set the Mukono document link - adjust if needed for deployed environment
+  var mukonoLink = document.getElementById('openMukono');
+  // local path as uploaded (tool provided): you may need to adjust this path for production
+  mukonoLink.href = '/mnt/data/MUKONO DISTRICT LOCAL GOVERNMENT_0.docx';
 
-    // checkbox toggles
-    document.getElementById('regionsLayer').addEventListener('change', function() {
-      if (this.checked) map.addLayer(regionsGroup); else map.removeLayer(regionsGroup);
-    });
-    document.getElementById('districtsLayer').addEventListener('change', function() {
-      if (this.checked) map.addLayer(districtsGroup); else map.removeLayer(districtsGroup);
-    });
-    document.getElementById('kampalaToggle').addEventListener('change', function() {
-      if (this.checked) {
-        map.addLayer(kampalaGroup);
-        // Also optionally ensure district toggle is on (make sense visually)
-        document.getElementById('districtsLayer').checked = true;
-        if (!map.hasLayer(districtsGroup)) map.addLayer(districtsGroup);
-      } else {
-        map.removeLayer(kampalaGroup);
-      }
-    });
-    document.getElementById('subcountiesLayer').addEventListener('change', function() {
-      if (this.checked) map.addLayer(subcountiesGroup); else map.removeLayer(subcountiesGroup);
-    });
-    document.getElementById('parishesLayer').addEventListener('change', function() {
-      if (this.checked) map.addLayer(parishesGroup); else map.removeLayer(parishesGroup);
-    });
-    document.getElementById('villagesLayer').addEventListener('change', function() {
-      if (this.checked) map.addLayer(villagesGroup); else map.removeLayer(villagesGroup);
-    });
-
-    // Basemap toggle
-    document.getElementById('basemapToggle').addEventListener('change', function() {
-      if (this.checked) {
-        if (!map.hasLayer(osm)) map.addLayer(osm);
-      } else {
-        if (map.hasLayer(osm)) map.removeLayer(osm);
-      }
-    });
-
-    // Admin level radio: show only the selected admin demarcations (good for clear boundaries)
-    var adminRadios = document.getElementsByName('adminLevel');
-    function setAdminLevel(level) {
-      // remove the admin groups we will control
-      map.removeLayer(regionsGroup);
-      map.removeLayer(districtsGroup);
-      map.removeLayer(kampalaGroup);
-      map.removeLayer(subcountiesGroup);
-      map.removeLayer(parishesGroup);
-      map.removeLayer(villagesGroup);
-
-      // Add back depending on level
-      if (level === 'regions') { map.addLayer(regionsGroup); document.getElementById('regionsLayer').checked = true; }
-      if (level === 'districts') { map.addLayer(districtsGroup); document.getElementById('districtsLayer').checked = true; }
-      if (level === 'kampala') { map.addLayer(kampalaGroup); document.getElementById('kampalaToggle').checked = true; document.getElementById('districtsLayer').checked = true; if (!map.hasLayer(districtsGroup)) map.addLayer(districtsGroup); }
-      if (level === 'subcounties') { map.addLayer(subcountiesGroup); document.getElementById('subcountiesLayer').checked = true; }
-      if (level === 'parishes') { map.addLayer(parishesGroup); document.getElementById('parishesLayer').checked = true; }
-      if (level === 'villages') { map.addLayer(villagesGroup); document.getElementById('villagesLayer').checked = true; }
-    }
-    // wire radios
-    adminRadios.forEach(r => r.addEventListener('change', function() { if (this.checked) setAdminLevel(this.value); }));
-    // initial admin level: villages (already selected in HTML)
-    setAdminLevel('villages');
-
-    // -------------- simple search (by name) ----------------
-    function findFeatureByName(name) {
-      name = name && name.trim().toLowerCase();
-      if (!name) return null;
-      var found = null;
-      // check each group in priority: villages->parishes->subcounties->districts->regions
-      var groups = [villagesGroup, parishesGroup, subcountiesGroup, districtsGroup, regionsGroup, kampalaGroup];
-      for (var i=0;i<groups.length;i++) {
-        groups[i].eachLayer(function(layer){
-          if (found) return;
-          var props = (layer.feature && layer.feature.properties) || {};
-          // check common fields
-          var candidates = [props.VNAME2014, props.PNAME2014, props.DNAME2014, props.NAME_2, props.NAME];
-          for (var j=0;j<candidates.length;j++) {
-            if (candidates[j] && String(candidates[j]).toLowerCase().indexOf(name) !== -1) {
-              found = layer;
-              return;
-            }
-          }
-        });
-        if (found) break;
-      }
-      return found;
-    }
-
-    document.getElementById('searchBtn').addEventListener('click', function(){
-      var q = document.getElementById('searchBox').value;
-      var layer = findFeatureByName(q);
-      if (!layer) {
-        alert('No match found for: ' + q);
-        return;
-      }
-      // ensure the layer's group is visible
-      // try to fit bounds
-      var bounds = layer.getBounds ? layer.getBounds() : null;
-      if (bounds) {
-        map.fitBounds(bounds.pad(1.2));
-      } else {
-        map.setView(layer.getLatLng(), 14);
-      }
-      // trigger click to show info
-      layer.fire('click');
-    });
-
-    // support pressing Enter in input
-    document.getElementById('searchBox').addEventListener('keyup', function(e){
-      if (e.key === 'Enter') document.getElementById('searchBtn').click();
-    });
-
-    // -------------- ensure map layout & z-index clarity ----------
-    // ensure our panels do not get covered by the map controls: Leaflet control z-index is normally lower than our panels.
-
-    // -------------- Helpful debug console messages ------------
-    console.log('Map initialised. GeoJSON files will load if they are in the same directory as this HTML file:');
-    console.log('- Uganda Regional Boundaries.json');
-    console.log('- Uganda District Boundaries 2014.json');
-    console.log('- Kampala District.json');
-    console.log('- Uganda Subcounties.json');
-    console.log('- Uganda Parishes.json');
-    console.log('- Uganda Villages 2009.json');
-
-    // If a layer doesn't appear: check browser console for "Cannot load <file>" errors (404 or filename mismatch)
+  // On page load log layers for debug
+  console.log('UI initialised. Waiting for layer loads...');
   </script>
-
 </body>
 </html>
 
