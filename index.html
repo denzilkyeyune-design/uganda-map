@@ -1,576 +1,253 @@
 <!doctype html>
 <html lang="en">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Regional Map</title>
-  <script src="/_sdk/element_sdk.js"></script>
+<head>
+  <meta charset="utf-8" />
+  <title>Uganda — Regions (interactive)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        integrity="sha256-sA+e2wGk6Gf3p4c0kz3K0x0qvO+F2qU3qk8m2Gm5Z6M=" crossorigin=""/>
   <style>
-    body {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      height: 100%;
-      overflow: hidden;
-    }
+    /* Simple page reset */
+    html,body,#map { height:100%; margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; }
+    #map { position: absolute; top:0; left:0; right:0; bottom:0; }
 
-    html {
-      height: 100%;
-    }
-
-    .app-container {
-      display: flex;
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    .map-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 2%;
-      transition: flex 0.3s ease;
-    }
-
-    .map-section.sidebar-open {
-      flex: 0.6;
-    }
-
-    .header {
-      margin-bottom: 2%;
-    }
-
-    .map-title {
-      color: white;
-      font-size: 2em;
-      font-weight: bold;
-      margin: 0 0 1% 0;
-    }
-
-    .search-container {
-      position: relative;
-      margin-bottom: 2%;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 1.2% 3% 1.2% 4%;
-      border: none;
-      border-radius: 12px;
-      font-size: 1em;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      box-sizing: border-box;
-    }
-
-    .search-icon {
+    /* Top-right control panel */
+    .control-panel {
       position: absolute;
-      left: 1.5%;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #667eea;
-      font-size: 1.2em;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.95);
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      min-width: 220px;
     }
+    .control-panel h4 { margin:0 0 6px 0; font-size:14px; }
+    .control-panel label { display:block; margin:4px 0; font-size:13px; cursor:pointer; }
 
-    .map-container {
-      flex: 1;
-      background: white;
-      border-radius: 16px;
-      padding: 3%;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
+    /* Info sidebar (tiny) */
+    #info {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.97);
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      min-width: 220px;
     }
+    #info h4 { margin:0 0 6px 0; font-size:14px; }
+    #info p { margin:0; font-size:13px; line-height:1.3; }
 
-    .map-svg {
-      width: 90%;
-      height: 90%;
-      max-width: 800px;
-      max-height: 600px;
-    }
+    /* Make sure map doesn't cover controls */
+    .leaflet-container { z-index: 0; }
 
-    .region {
-      fill: #e0e7ff;
-      stroke: #667eea;
-      stroke-width: 2;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .region:hover {
-      fill: #c7d2fe;
-      transform: scale(1.05);
-      transform-origin: center;
-    }
-
-    .region.selected {
-      fill: #667eea;
-      stroke: #4c51bf;
-      stroke-width: 3;
-      filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.4));
-    }
-
-    .region-label {
-      fill: #4c51bf;
-      font-size: 0.9em;
-      font-weight: 600;
-      pointer-events: none;
-      text-anchor: middle;
-    }
-
-    .sidebar {
-      width: 0;
-      background: white;
-      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-      overflow-y: auto;
-      overflow-x: hidden;
-      transition: width 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .sidebar.open {
-      width: 35%;
-      min-width: 300px;
-    }
-
-    .sidebar-content {
-      padding: 6%;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .sidebar.open .sidebar-content {
-      opacity: 1;
-    }
-
-    .close-btn {
-      align-self: flex-end;
-      background: none;
-      border: none;
-      font-size: 2em;
-      color: #667eea;
-      cursor: pointer;
-      padding: 4%;
-      transition: color 0.2s;
-    }
-
-    .close-btn:hover {
-      color: #4c51bf;
-    }
-
-    .sidebar-title {
-      color: #667eea;
-      font-size: 2em;
-      font-weight: bold;
-      margin: 0 0 3% 0;
-    }
-
-    .sidebar-description {
-      color: #4b5563;
-      font-size: 1em;
-      line-height: 1.6;
-      margin-bottom: 5%;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3%;
-      margin-top: 5%;
-    }
-
-    .stat-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 5%;
-      border-radius: 12px;
-      color: white;
-    }
-
-    .stat-label {
-      font-size: 0.8em;
-      opacity: 0.9;
-      margin-bottom: 2%;
-    }
-
-    .stat-value {
-      font-size: 1.5em;
-      font-weight: bold;
-    }
-
-    .info-section {
-      margin-top: 6%;
-      padding-top: 6%;
-      border-top: 2px solid #e5e7eb;
-    }
-
-    .info-title {
-      color: #667eea;
-      font-size: 1.2em;
-      font-weight: 600;
-      margin-bottom: 3%;
-    }
-
-    .info-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .info-list li {
-      padding: 3% 0;
-      color: #4b5563;
-      border-bottom: 1px solid #e5e7eb;
-    }
-
-    .info-list li:last-child {
-      border-bottom: none;
-    }
-
-    @media (max-width: 768px) {
-      .app-container {
-        flex-direction: column;
-      }
-
-      .map-section {
-        flex: 1;
-      }
-
-      .map-section.sidebar-open {
-        flex: 0.5;
-      }
-
-      .sidebar.open {
-        width: 100%;
-        position: absolute;
-        height: 100%;
-        z-index: 10;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+    /* small hover hint */
+    .hint { font-size:12px; color:#555; margin-top:6px; }
   </style>
-  <style>@view-transition { navigation: auto; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
-  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
- </head>
- <body>
-  <div class="app-container">
-   <div class="map-section" id="mapSection">
-    <div class="header">
-     <h1 class="map-title" id="mapTitle">Interactive Regional Map</h1>
-     <div class="search-container"><span class="search-icon">🔍</span> <input type="text" class="search-input" id="searchInput" placeholder="Search for a region...">
-     </div>
-    </div>
-    <div class="map-container">
-     <svg class="map-svg" viewbox="0 0 800 600" id="mapSvg"><!-- Northern Region --> <polygon class="region" data-region="northern" points="200,100 400,80 450,150 350,200 250,180" /> <text class="region-label" x="330" y="150">
-       Northern
-      </text> <!-- Eastern Region --> <polygon class="region" data-region="eastern" points="450,150 600,120 620,250 500,280 450,220" /> <text class="region-label" x="530" y="210">
-       Eastern
-      </text> <!-- Central Region --> <polygon class="region" data-region="central" points="250,180 350,200 450,220 420,320 300,340 220,280" /> <text class="region-label" x="330" y="270">
-       Central
-      </text> <!-- Western Region --> <polygon class="region" data-region="western" points="150,250 220,280 300,340 280,450 150,420" /> <text class="region-label" x="220" y="360">
-       Western
-      </text> <!-- Southern Region --> <polygon class="region" data-region="southern" points="280,450 420,420 500,480 450,550 300,530" /> <text class="region-label" x="390" y="490">
-       Southern
-      </text> <!-- Coastal Region --> <polygon class="region" data-region="coastal" points="500,280 620,250 650,380 580,450 500,420 420,320" /> <text class="region-label" x="540" y="360">
-       Coastal
-      </text>
-     </svg>
-    </div>
-   </div>
-   <div class="sidebar" id="sidebar"><button class="close-btn" id="closeBtn">×</button>
-    <div class="sidebar-content" id="sidebarContent"></div>
-   </div>
-  </div>
-  <script>
-    const defaultConfig = {
-      map_title: "Interactive Regional Map",
-      search_placeholder: "Search for a region...",
-      primary_color: "#667eea",
-      secondary_color: "#764ba2",
-      surface_color: "#ffffff",
-      text_color: "#4b5563",
-      accent_color: "#e0e7ff"
-    };
+</head>
+<body>
 
-    const regionData = {
-      northern: {
-        name: "Northern Region",
-        description: "A mountainous region known for its scenic valleys and rich cultural heritage. Home to diverse communities and stunning natural landscapes.",
-        population: "2.5M",
-        area: "15,432 km²",
-        capital: "Northville",
-        gdp: "$45B",
-        highlights: [
-          "Mountain ranges and hiking trails",
-          "Traditional craft markets",
-          "Historic monasteries and temples",
-          "Winter sports destinations"
-        ]
-      },
-      eastern: {
-        name: "Eastern Region",
-        description: "A technologically advanced region with bustling cities and innovation hubs. Known for its modern infrastructure and economic growth.",
-        population: "3.8M",
-        area: "12,890 km²",
-        capital: "Eastport",
-        gdp: "$78B",
-        highlights: [
-          "Technology and innovation centers",
-          "International trade hub",
-          "Modern architecture",
-          "Educational institutions"
-        ]
-      },
-      central: {
-        name: "Central Region",
-        description: "The administrative heart with government buildings and cultural institutions. A blend of historical significance and modern development.",
-        population: "4.2M",
-        area: "18,765 km²",
-        capital: "Capital City",
-        gdp: "$92B",
-        highlights: [
-          "Government headquarters",
-          "Museums and galleries",
-          "Historic landmarks",
-          "Business district"
-        ]
-      },
-      western: {
-        name: "Western Region",
-        description: "An agricultural powerhouse with vast farmlands and vineyards. Renowned for organic farming and sustainable practices.",
-        population: "1.9M",
-        area: "21,340 km²",
-        capital: "Westbrook",
-        gdp: "$38B",
-        highlights: [
-          "Organic farming cooperatives",
-          "Wine country and vineyards",
-          "Agricultural festivals",
-          "Rural tourism destinations"
-        ]
-      },
-      southern: {
-        name: "Southern Region",
-        description: "A warm region with rich biodiversity and natural reserves. Popular for ecotourism and wildlife conservation efforts.",
-        population: "2.1M",
-        area: "19,567 km²",
-        capital: "Southhaven",
-        gdp: "$41B",
-        highlights: [
-          "National parks and reserves",
-          "Diverse wildlife habitats",
-          "Ecotourism programs",
-          "Tropical beaches"
-        ]
-      },
-      coastal: {
-        name: "Coastal Region",
-        description: "A maritime region with busy ports and beautiful beaches. Major center for fishing, shipping, and beach tourism.",
-        population: "3.3M",
-        area: "14,223 km²",
-        capital: "Harbortown",
-        gdp: "$65B",
-        highlights: [
-          "International seaports",
-          "Fishing industry",
-          "Beach resorts",
-          "Maritime museums"
-        ]
-      }
-    };
+<div id="map"></div>
 
-    let selectedRegion = null;
+<!-- Info card (left) -->
+<div id="info" aria-live="polite">
+  <h4>Region info</h4>
+  <p id="info-content">Click a region to view details. Hover to highlight.</p>
+</div>
 
-    function renderSidebar(regionId) {
-      const data = regionData[regionId];
-      const content = document.getElementById('sidebarContent');
-      
-      content.innerHTML = `
-        <h2 class="sidebar-title">${data.name}</h2>
-        <p class="sidebar-description">${data.description}</p>
-        
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Population</div>
-            <div class="stat-value">${data.population}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Area</div>
-            <div class="stat-value">${data.area}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Capital</div>
-            <div class="stat-value">${data.capital}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">GDP</div>
-            <div class="stat-value">${data.gdp}</div>
-          </div>
-        </div>
-        
-        <div class="info-section">
-          <h3 class="info-title">Key Highlights</h3>
-          <ul class="info-list">
-            ${data.highlights.map(item => `<li>• ${item}</li>`).join('')}
-          </ul>
-        </div>
-      `;
+<!-- Controls (right) -->
+<div class="control-panel" role="region" aria-label="Map controls">
+  <h4>Layers & controls</h4>
+  <label>
+    <input type="checkbox" id="basemapToggle" checked>
+    Show basemap (OpenStreetMap)
+  </label>
+  <label>
+    <input type="checkbox" id="regionsToggle" checked>
+    Show regions
+  </label>
+  <div class="hint">Tip: click a region to populate the info box.</div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+        integrity="sha256-o9N1j7kXQK5QXb6jv8tXQ1d4wqTn9vY3bE2hFq8qGx0=" crossorigin=""></script>
+
+<script>
+/* ====== Basic map setup ====== */
+const map = L.map('map', { zoomControl: true }).setView([1.2, 32.3], 7);
+
+/* Basemap (tile) */
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors',
+  maxZoom: 19
+}).addTo(map);
+
+/* Regions layer placeholder */
+let regionsLayer = L.geoJSON(null, {
+  style: defaultRegionStyle,
+  onEachFeature: onEachRegionFeature
+}).addTo(map);
+
+/* Keep a reference to the currently highlighted feature so we can reset style */
+let lastHighlightedLayer = null;
+
+/* Default and highlight styles */
+function defaultRegionStyle(feature) {
+  return {
+    color: '#2a4d69',       // boundary stroke colour
+    weight: 2,
+    fillColor: '#9fc5e8',   // fill colour
+    fillOpacity: 0.35
+  };
+}
+function highlightStyle() {
+  return {
+    color: '#084c06', // dark green border
+    weight: 3,
+    fillColor: '#7bd389',
+    fillOpacity: 0.6
+  };
+}
+
+/* onEachFeature: set up hover and click */
+function onEachRegionFeature(feature, layer) {
+  // make cursor pointer
+  layer.on('mouseover', function(e) {
+    this.setStyle(highlightStyle());
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+      this.bringToFront();
     }
-
-    function selectRegion(regionId) {
-      const regions = document.querySelectorAll('.region');
-      regions.forEach(r => r.classList.remove('selected'));
-      
-      const region = document.querySelector(`[data-region="${regionId}"]`);
-      if (region) {
-        region.classList.add('selected');
-        selectedRegion = regionId;
-        
-        const sidebar = document.getElementById('sidebar');
-        const mapSection = document.getElementById('mapSection');
-        sidebar.classList.add('open');
-        mapSection.classList.add('sidebar-open');
-        
-        renderSidebar(regionId);
-      }
+    // quick info preview in small panel
+    const n = displayNameFor(feature);
+    document.getElementById('info-content').innerHTML = '<strong>' + n + '</strong><br>Hovering — click for full details.';
+  });
+  layer.on('mouseout', function(e) {
+    // reset style (but keep last clicked highlighted)
+    if (lastHighlightedLayer && this === lastHighlightedLayer) {
+      // keep the clicked style
+      this.setStyle(highlightStyle());
+    } else {
+      regionsLayer.resetStyle(this);
     }
+    // if there is a selected feature, show it; otherwise default message
+    if (lastHighlightedLayer) {
+      const f = lastHighlightedLayer.feature;
+      showFeatureDetails(f);
+    } else {
+      document.getElementById('info-content').innerHTML = 'Click a region to view details. Hover to highlight.';
+    }
+  });
+  layer.on('click', function(e) {
+    // reset previous
+    if (lastHighlightedLayer && lastHighlightedLayer !== this) {
+      regionsLayer.resetStyle(lastHighlightedLayer);
+    }
+    // set this as selected
+    lastHighlightedLayer = this;
+    this.setStyle(highlightStyle());
+    // show details in info box
+    showFeatureDetails(feature);
+    // optionally, you could fitBounds to the selected feature:
+    // map.fitBounds(this.getBounds(), { padding: [20,20] });
+  });
+}
 
-    document.querySelectorAll('.region').forEach(region => {
-      region.addEventListener('click', function() {
-        const regionId = this.getAttribute('data-region');
-        selectRegion(regionId);
-      });
+/* Helper: find a good display name from properties */
+function displayNameFor(feature) {
+  if (!feature || !feature.properties) return 'Unknown';
+  const p = feature.properties;
+  // try common property names (adapt based on your GeoJSON)
+  return p.NAME_1 || p.DNAME2014 || p.REGION || p.region || p.name || 'Unnamed region';
+}
+
+/* Show full attributes in the info sidebar */
+function showFeatureDetails(feature) {
+  const p = feature.properties || {};
+  const name = displayNameFor(feature);
+  // Build a small table of important attributes (customise as needed)
+  let html = '<strong>' + name + '</strong><br><br>';
+  // list some properties if available (adjust to your file structure)
+  const keysToShow = ['REGION', 'NAME_1', 'DNAME2014', 'SUBREGION', 'POP_2014'];
+  let added = 0;
+  keysToShow.forEach(k => {
+    if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '') {
+      html += '<strong>' + k + ':</strong> ' + p[k] + '<br>';
+      added++;
+    }
+  });
+  // fallback: show first few properties if none of the expected keys exist
+  if (added === 0) {
+    const entries = Object.entries(p).slice(0,6);
+    entries.forEach(([k,v]) => {
+      html += '<strong>' + k + ':</strong> ' + v + '<br>';
     });
+  }
+  document.getElementById('info-content').innerHTML = html;
+}
 
-    document.getElementById('closeBtn').addEventListener('click', function() {
-      const sidebar = document.getElementById('sidebar');
-      const mapSection = document.getElementById('mapSection');
-      sidebar.classList.remove('open');
-      mapSection.classList.remove('sidebar-open');
-      
-      const regions = document.querySelectorAll('.region');
-      regions.forEach(r => r.classList.remove('selected'));
-      selectedRegion = null;
-    });
-
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-      const searchTerm = e.target.value.toLowerCase();
-      
-      if (searchTerm.length === 0) {
-        return;
-      }
-      
-      for (const [regionId, data] of Object.entries(regionData)) {
-        if (data.name.toLowerCase().includes(searchTerm) || 
-            data.capital.toLowerCase().includes(searchTerm) ||
-            regionId.includes(searchTerm)) {
-          selectRegion(regionId);
-          break;
-        }
-      }
-    });
-
-    async function onConfigChange(config) {
-      const titleElement = document.getElementById('mapTitle');
-      const searchInput = document.getElementById('searchInput');
-      
-      titleElement.textContent = config.map_title || defaultConfig.map_title;
-      searchInput.placeholder = config.search_placeholder || defaultConfig.search_placeholder;
-      
-      const primaryColor = config.primary_color || defaultConfig.primary_color;
-      const secondaryColor = config.secondary_color || defaultConfig.secondary_color;
-      const surfaceColor = config.surface_color || defaultConfig.surface_color;
-      const textColor = config.text_color || defaultConfig.text_color;
-      const accentColor = config.accent_color || defaultConfig.accent_color;
-      
-      document.body.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
-      
-      const regions = document.querySelectorAll('.region');
-      regions.forEach(region => {
-        region.style.fill = accentColor;
-        region.style.stroke = primaryColor;
-      });
-      
-      const selectedRegions = document.querySelectorAll('.region.selected');
-      selectedRegions.forEach(region => {
-        region.style.fill = primaryColor;
-      });
-      
-      const statCards = document.querySelectorAll('.stat-card');
-      statCards.forEach(card => {
-        card.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
-      });
-      
-      document.querySelector('.sidebar-title').style.color = primaryColor;
-      document.querySelector('.close-btn').style.color = primaryColor;
-      
-      const infoTitle = document.querySelector('.info-title');
-      if (infoTitle) {
-        infoTitle.style.color = primaryColor;
-      }
+/* ====== Load Regions GeoJSON ======
+   Ensure the JSON filename/path is correct and that the file is served next to this page.
+   The file you uploaded is 'Uganda Regional Boundaries.json' — keep that name or update below.
+*/
+fetch('Uganda Regional Boundaries.json')
+  .then(res => {
+    if (!res.ok) throw new Error('Failed to fetch regions GeoJSON: ' + res.statusText);
+    return res.json();
+  })
+  .then(geojson => {
+    // add to layer
+    regionsLayer.addData(geojson);
+    // fit map to bounds of regions
+    try {
+      map.fitBounds(regionsLayer.getBounds(), { padding: [20,20] });
+    } catch (e) {
+      // no bounds available
+      console.warn('Could not fit bounds:', e);
     }
+    console.log('Regions loaded:', regionsLayer.getLayers().length, 'features');
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('info-content').innerHTML = 'Error loading regions GeoJSON. Check file name and path in project.';
+  });
 
-    if (window.elementSdk) {
-      window.elementSdk.init({
-        defaultConfig,
-        onConfigChange,
-        mapToCapabilities: (config) => ({
-          recolorables: [
-            {
-              get: () => config.primary_color || defaultConfig.primary_color,
-              set: (value) => {
-                config.primary_color = value;
-                window.elementSdk.setConfig({ primary_color: value });
-              }
-            },
-            {
-              get: () => config.secondary_color || defaultConfig.secondary_color,
-              set: (value) => {
-                config.secondary_color = value;
-                window.elementSdk.setConfig({ secondary_color: value });
-              }
-            },
-            {
-              get: () => config.surface_color || defaultConfig.surface_color,
-              set: (value) => {
-                config.surface_color = value;
-                window.elementSdk.setConfig({ surface_color: value });
-              }
-            },
-            {
-              get: () => config.text_color || defaultConfig.text_color,
-              set: (value) => {
-                config.text_color = value;
-                window.elementSdk.setConfig({ text_color: value });
-              }
-            },
-            {
-              get: () => config.accent_color || defaultConfig.accent_color,
-              set: (value) => {
-                config.accent_color = value;
-                window.elementSdk.setConfig({ accent_color: value });
-              }
-            }
-          ],
-          borderables: [],
-          fontEditable: undefined,
-          fontSizeable: undefined
-        }),
-        mapToEditPanelValues: (config) => new Map([
-          ["map_title", config.map_title || defaultConfig.map_title],
-          ["search_placeholder", config.search_placeholder || defaultConfig.search_placeholder]
-        ])
-      });
-    }
-  </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a37e4e4d4e9c835',t:'MTc2Mzk3NjY5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+/* ====== UI toggles ====== */
+document.getElementById('basemapToggle').addEventListener('change', function(e) {
+  if (this.checked) {
+    map.addLayer(osm);
+  } else {
+    map.removeLayer(osm);
+  }
+});
+
+document.getElementById('regionsToggle').addEventListener('change', function(e) {
+  if (this.checked) {
+    map.addLayer(regionsLayer);
+    // if not already set, fit bounds to show regions
+    try {
+      map.fitBounds(regionsLayer.getBounds(), { padding: [20,20] });
+    } catch (err) {}
+  } else {
+    map.removeLayer(regionsLayer);
+    // clear info box
+    document.getElementById('info-content').innerHTML = 'Regions hidden.';
+    lastHighlightedLayer = null;
+  }
+});
+
+/* Optional: keyboard accessibility (press R to toggle regions) */
+document.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'r') {
+    const cb = document.getElementById('regionsToggle');
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  }
+});
+</script>
+</body>
 </html>
-
