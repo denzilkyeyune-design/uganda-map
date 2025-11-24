@@ -1,6 +1,6 @@
-// -----------------------------------------------------------
+//-----------------------------------------------------------
 // INITIALIZE MAP
-// -----------------------------------------------------------
+//-----------------------------------------------------------
 var map = L.map("map").setView([1.3, 32.3], 7);
 
 // Basemap layer
@@ -8,15 +8,15 @@ var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19
 }).addTo(map);
 
-// Toggle basemap on/off
-document.getElementById("basemapToggle").onchange = function () {
+// Toggle basemap (LEFT SIDEBAR CHECKBOX)
+document.getElementById("toggleBasemap").onchange = function () {
     if (this.checked) map.addLayer(osm);
     else map.removeLayer(osm);
 };
 
-// -----------------------------------------------------------
-// REGION STYLES
-// -----------------------------------------------------------
+//-----------------------------------------------------------
+// LOAD REGIONS
+//-----------------------------------------------------------
 var regionStyle = {
     color: "blue",
     weight: 2,
@@ -26,18 +26,16 @@ var regionStyle = {
 var highlightStyle = {
     color: "orange",
     weight: 3,
-    fillOpacity: 0.30
+    fillOpacity: 0.3
 };
 
-// -----------------------------------------------------------
-// LOAD REGIONS
-// -----------------------------------------------------------
+// IMPORTANT: this must match HTML checkbox id="toggleRegions"
 var regionsLayer = L.geoJSON(null, {
     style: regionStyle,
 
     onEachFeature: function (feature, layer) {
 
-        // Hover effect
+        // Hover highlight
         layer.on("mouseover", function () {
             layer.setStyle(highlightStyle);
         });
@@ -46,44 +44,51 @@ var regionsLayer = L.geoJSON(null, {
             regionsLayer.resetStyle(layer);
         });
 
-        // CLICK event — load region info file
+        // CLICK → load region HTML info
         layer.on("click", function () {
-            let regionName = feature.properties.ADM1_EN.toUpperCase(); // e.g. CENTRAL
+            let regionName = feature.properties.ADM1_EN;   // CENTRAL, EASTERN, etc.
             let filePath = "Regional Information/" + regionName + ".html";
 
             loadRegionInfo(filePath);
 
+            // Zoom to region
             map.fitBounds(layer.getBounds());
         });
     }
 }).addTo(map);
-
 
 // Load Region GeoJSON
 fetch("Uganda Regional Boundaries.json")
     .then(res => res.json())
     .then(data => {
         regionsLayer.addData(data);
-        console.log("Regions loaded");
-    });
+        console.log("Regions loaded successfully.");
+    })
+    .catch(err => console.error("Failed loading region GeoJSON:", err));
 
-// Show/hide regions
-document.getElementById("regionsToggle").onchange = function () {
+
+// SHOW / HIDE REGIONS (LEFT SIDEBAR CHECKBOX)
+document.getElementById("toggleRegions").onchange = function () {
     if (this.checked) map.addLayer(regionsLayer);
     else map.removeLayer(regionsLayer);
 };
 
-// -----------------------------------------------------------
-// LOAD REGION INFO HTML FILE
-// -----------------------------------------------------------
+//-----------------------------------------------------------
+// LOAD REGION INFORMATION FILE (RIGHT SIDEBAR)
+//-----------------------------------------------------------
 function loadRegionInfo(filePath) {
     fetch(filePath)
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById("regionInfoBox").innerHTML = html;
+        .then(response => {
+            if (!response.ok) {
+                return "<p><b>No info available for this region.</b></p>";
+            }
+            return response.text();
         })
-        .catch(() => {
-            document.getElementById("regionInfoBox").innerHTML =
-                "<p><b>No information file found for this region.</b></p>";
+        .then(html => {
+            document.getElementById("region-details").innerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById("region-details").innerHTML =
+                "<p><b>Error loading region info.</b></p>";
         });
 }
