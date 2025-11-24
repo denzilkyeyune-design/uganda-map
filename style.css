@@ -43,11 +43,15 @@ body {
 }
 
 /* Move control panel to the right */
-#control-panel {
+#controls {
     position: absolute;
     top: 20px;
-    right: 20px;     /* ⬅️ Now on the RIGHT */
-    left: auto;      /* ⬅️ Remove the left positioning */
-    width: 260px;
-    z-index: 1000;
+    right: 20px;     /* <-- CHANGE: moves panel to the right */
+    left: auto !important;
+    width: 280px;
+    z-index: 9999;
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.25);
 }
