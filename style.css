@@ -1,32 +1,49 @@
-/* Move sidebar to the RIGHT */
-#sidebar {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 300px;
-    height: 100%;
-    background: white;
-    padding: 10px 20px 20px 20px;  /* Reduced top padding */
-    overflow-y: auto;
-    z-index: 1000;
-    box-shadow: -3px 0 6px rgba(0,0,0,0.2);
+/* GENERAL PAGE SETUP */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
 }
 
-/* Make the logo smaller & closer to the top */
-#logo {
-    width: 85%;
-    margin: 0 auto;
-    display: block;
-    margin-top: 5px;    /* Remove huge spacing above */
-    margin-bottom: 10px;
-}
-
-/* Map shifts left so sidebar fits */
-#map {
+/* LEFT SIDEBAR */
+#leftSidebar {
     position: absolute;
     top: 0;
     left: 0;
-    right: 300px;
+    width: 260px;
+    height: 100%;
+    background: white;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1000;
+    border-right: 2px solid #ddd;
+}
+
+#logo {
+    width: 90%;
+    margin-bottom: 20px;
+}
+
+/* RIGHT SIDEBAR — REGION INFO */
+#rightSidebar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 320px;
+    height: 100%;
+    background: white;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1000;
+    border-left: 2px solid #ddd;
+}
+
+/* MAP FITS BETWEEN BOTH PANELS */
+#map {
+    position: absolute;
+    top: 0;
+    left: 260px;     /* leave space for left sidebar */
+    right: 320px;    /* leave space for right sidebar */
     bottom: 0;
 }
 
