@@ -1,253 +1,44 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <title>Uganda — Regions (interactive)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-        integrity="sha256-sA+e2wGk6Gf3p4c0kz3K0x0qvO+F2qU3qk8m2Gm5Z6M=" crossorigin=""/>
-  <style>
-    /* Simple page reset */
-    html,body,#map { height:100%; margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; }
-    #map { position: absolute; top:0; left:0; right:0; bottom:0; }
+    <meta charset="utf-8" />
+    <title>Uganda Regions Map</title>
 
-    /* Top-right control panel */
-    .control-panel {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      padding: 10px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      min-width: 220px;
-    }
-    .control-panel h4 { margin:0 0 6px 0; font-size:14px; }
-    .control-panel label { display:block; margin:4px 0; font-size:13px; cursor:pointer; }
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css" />
 
-    /* Info sidebar (tiny) */
-    #info {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      z-index: 1000;
-      background: rgba(255,255,255,0.97);
-      padding: 12px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      min-width: 220px;
-    }
-    #info h4 { margin:0 0 6px 0; font-size:14px; }
-    #info p { margin:0; font-size:13px; line-height:1.3; }
-
-    /* Make sure map doesn't cover controls */
-    .leaflet-container { z-index: 0; }
-
-    /* small hover hint */
-    .hint { font-size:12px; color:#555; margin-top:6px; }
-  </style>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
+
 <body>
+
+<div id="sidebar">
+    <h2>Map Controls</h2>
+
+    <label>
+        <input type="checkbox" id="basemapToggle" checked>
+        Basemap (on/off)
+    </label>
+    <br><br>
+
+    <label>
+        <input type="checkbox" id="regionsToggle">
+        Show Regions
+    </label>
+    <br><br>
+
+    <input id="searchBox" type="text" placeholder="Search region name…"/>
+    <button id="searchBtn">Find</button>
+
+    <div id="infoBox">
+        <h3>No selection</h3>
+        <p>Click a region to view details.</p>
+    </div>
+</div>
 
 <div id="map"></div>
 
-<!-- Info card (left) -->
-<div id="info" aria-live="polite">
-  <h4>Region info</h4>
-  <p id="info-content">Click a region to view details. Hover to highlight.</p>
-</div>
-
-<!-- Controls (right) -->
-<div class="control-panel" role="region" aria-label="Map controls">
-  <h4>Layers & controls</h4>
-  <label>
-    <input type="checkbox" id="basemapToggle" checked>
-    Show basemap (OpenStreetMap)
-  </label>
-  <label>
-    <input type="checkbox" id="regionsToggle" checked>
-    Show regions
-  </label>
-  <div class="hint">Tip: click a region to populate the info box.</div>
-</div>
-
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
-        integrity="sha256-o9N1j7kXQK5QXb6jv8tXQ1d4wqTn9vY3bE2hFq8qGx0=" crossorigin=""></script>
-
-<script>
-/* ====== Basic map setup ====== */
-const map = L.map('map', { zoomControl: true }).setView([1.2, 32.3], 7);
-
-/* Basemap (tile) */
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors',
-  maxZoom: 19
-}).addTo(map);
-
-/* Regions layer placeholder */
-let regionsLayer = L.geoJSON(null, {
-  style: defaultRegionStyle,
-  onEachFeature: onEachRegionFeature
-}).addTo(map);
-
-/* Keep a reference to the currently highlighted feature so we can reset style */
-let lastHighlightedLayer = null;
-
-/* Default and highlight styles */
-function defaultRegionStyle(feature) {
-  return {
-    color: '#2a4d69',       // boundary stroke colour
-    weight: 2,
-    fillColor: '#9fc5e8',   // fill colour
-    fillOpacity: 0.35
-  };
-}
-function highlightStyle() {
-  return {
-    color: '#084c06', // dark green border
-    weight: 3,
-    fillColor: '#7bd389',
-    fillOpacity: 0.6
-  };
-}
-
-/* onEachFeature: set up hover and click */
-function onEachRegionFeature(feature, layer) {
-  // make cursor pointer
-  layer.on('mouseover', function(e) {
-    this.setStyle(highlightStyle());
-    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-      this.bringToFront();
-    }
-    // quick info preview in small panel
-    const n = displayNameFor(feature);
-    document.getElementById('info-content').innerHTML = '<strong>' + n + '</strong><br>Hovering — click for full details.';
-  });
-  layer.on('mouseout', function(e) {
-    // reset style (but keep last clicked highlighted)
-    if (lastHighlightedLayer && this === lastHighlightedLayer) {
-      // keep the clicked style
-      this.setStyle(highlightStyle());
-    } else {
-      regionsLayer.resetStyle(this);
-    }
-    // if there is a selected feature, show it; otherwise default message
-    if (lastHighlightedLayer) {
-      const f = lastHighlightedLayer.feature;
-      showFeatureDetails(f);
-    } else {
-      document.getElementById('info-content').innerHTML = 'Click a region to view details. Hover to highlight.';
-    }
-  });
-  layer.on('click', function(e) {
-    // reset previous
-    if (lastHighlightedLayer && lastHighlightedLayer !== this) {
-      regionsLayer.resetStyle(lastHighlightedLayer);
-    }
-    // set this as selected
-    lastHighlightedLayer = this;
-    this.setStyle(highlightStyle());
-    // show details in info box
-    showFeatureDetails(feature);
-    // optionally, you could fitBounds to the selected feature:
-    // map.fitBounds(this.getBounds(), { padding: [20,20] });
-  });
-}
-
-/* Helper: find a good display name from properties */
-function displayNameFor(feature) {
-  if (!feature || !feature.properties) return 'Unknown';
-  const p = feature.properties;
-  // try common property names (adapt based on your GeoJSON)
-  return p.NAME_1 || p.DNAME2014 || p.REGION || p.region || p.name || 'Unnamed region';
-}
-
-/* Show full attributes in the info sidebar */
-function showFeatureDetails(feature) {
-  const p = feature.properties || {};
-  const name = displayNameFor(feature);
-  // Build a small table of important attributes (customise as needed)
-  let html = '<strong>' + name + '</strong><br><br>';
-  // list some properties if available (adjust to your file structure)
-  const keysToShow = ['REGION', 'NAME_1', 'DNAME2014', 'SUBREGION', 'POP_2014'];
-  let added = 0;
-  keysToShow.forEach(k => {
-    if (p[k] !== undefined && p[k] !== null && String(p[k]).trim() !== '') {
-      html += '<strong>' + k + ':</strong> ' + p[k] + '<br>';
-      added++;
-    }
-  });
-  // fallback: show first few properties if none of the expected keys exist
-  if (added === 0) {
-    const entries = Object.entries(p).slice(0,6);
-    entries.forEach(([k,v]) => {
-      html += '<strong>' + k + ':</strong> ' + v + '<br>';
-    });
-  }
-  document.getElementById('info-content').innerHTML = html;
-}
-
-/* ====== Load Regions GeoJSON ======
-   Ensure the JSON filename/path is correct and that the file is served next to this page.
-   The file you uploaded is 'Uganda Regional Boundaries.json' — keep that name or update below.
-*/
-fetch('Uganda Regional Boundaries.json')
-  .then(res => {
-    if (!res.ok) throw new Error('Failed to fetch regions GeoJSON: ' + res.statusText);
-    return res.json();
-  })
-  .then(geojson => {
-    // add to layer
-    regionsLayer.addData(geojson);
-    // fit map to bounds of regions
-    try {
-      map.fitBounds(regionsLayer.getBounds(), { padding: [20,20] });
-    } catch (e) {
-      // no bounds available
-      console.warn('Could not fit bounds:', e);
-    }
-    console.log('Regions loaded:', regionsLayer.getLayers().length, 'features');
-  })
-  .catch(err => {
-    console.error(err);
-    document.getElementById('info-content').innerHTML = 'Error loading regions GeoJSON. Check file name and path in project.';
-  });
-
-/* ====== UI toggles ====== */
-document.getElementById('basemapToggle').addEventListener('change', function(e) {
-  if (this.checked) {
-    map.addLayer(osm);
-  } else {
-    map.removeLayer(osm);
-  }
-});
-
-document.getElementById('regionsToggle').addEventListener('change', function(e) {
-  if (this.checked) {
-    map.addLayer(regionsLayer);
-    // if not already set, fit bounds to show regions
-    try {
-      map.fitBounds(regionsLayer.getBounds(), { padding: [20,20] });
-    } catch (err) {}
-  } else {
-    map.removeLayer(regionsLayer);
-    // clear info box
-    document.getElementById('info-content').innerHTML = 'Regions hidden.';
-    lastHighlightedLayer = null;
-  }
-});
-
-/* Optional: keyboard accessibility (press R to toggle regions) */
-document.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 'r') {
-    const cb = document.getElementById('regionsToggle');
-    cb.checked = !cb.checked;
-    cb.dispatchEvent(new Event('change'));
-  }
-});
-</script>
+<script src="script.js"></script>
 </body>
 </html>
+
