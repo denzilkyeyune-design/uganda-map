@@ -29,7 +29,35 @@ var regionLayer = L.geoJSON(null, {
             regionLayer.resetStyle(this);
         });
 
-        layer.on("click", function () {
+        function onEachRegion(feature, layer) {
+    layer.on({
+        mouseover: highlightRegion,
+        mouseout: resetRegionHighlight,
+        click: loadRegionInfo
+    });
+}
+
+// Fetch and display region info
+function loadRegionInfo(e) {
+    let regionName = e.target.feature.properties.ADM1_EN;  // Example property name
+    let cleanName = regionName.toLowerCase().replace(/\s+/g, "");
+    let filePath = `region-info/${cleanName}.html`;
+
+    fetch(filePath)
+        .then(res => {
+            if (!res.ok) {
+                document.getElementById("regionDetails").innerHTML =
+                    `<h2>${regionName}</h2><p>No file found for this region.</p>`;
+                throw new Error("Missing file");
+            }
+            return res.text();
+        })
+        .then(html => {
+            document.getElementById("regionDetails").innerHTML = html;
+        })
+        .catch(err => console.log(err));
+}
+
             document.getElementById("infoBox").innerHTML = `
                 <h3>${feature.properties.ADM1_EN}</h3>
                 <p><strong>Region Code:</strong> ${feature.properties.ADM1_PCODE}</p>
