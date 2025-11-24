@@ -42,3 +42,12 @@ body {
     margin-bottom: 20px;
 }
 
+/* Move control panel to the right */
+#control-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;     /* ⬅️ Now on the RIGHT */
+    left: auto;      /* ⬅️ Remove the left positioning */
+    width: 260px;
+    z-index: 1000;
+}
