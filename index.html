@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Bantustats – Uganda Regions</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <title>Bantustats - Regions</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 
 <body>
 
 <div id="sidebar">
+
     <img src="bantustats.png" id="logo">
 
     <h2>Map Controls</h2>
-    <label><input type="checkbox" id="toggleBasemap" checked> Basemap (on/off)</label>
-    <br>
 
-    <label><input type="checkbox" id="toggleRegions" checked> Show Regions</label>
+    <label><input type="checkbox" id="basemapToggle" checked> Basemap (on/off)</label><br>
+    <label><input type="checkbox" id="regionsToggle" checked> Show Regions</label>
 
     <h3>Region Info</h3>
-    <div id="region-info">Click a region to view details.</div>
+    <div id="regionInfoBox">Click a region to view details.</div>
+
 </div>
 
 <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
 
 </body>
 </html>
+
 
 
