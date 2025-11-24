@@ -1,50 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title>Uganda Regions Map</title>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css" />
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <meta charset="utf-8">
+    <title>Bantustats – Uganda Regions</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div id="sidebar">
+    <img src="bantustats.png" id="logo">
+
     <h2>Map Controls</h2>
+    <label><input type="checkbox" id="toggleBasemap" checked> Basemap (on/off)</label>
+    <br>
 
-    <label>
-        <input type="checkbox" id="basemapToggle" checked>
-        Basemap (on/off)
-    </label>
-    <br><br>
+    <label><input type="checkbox" id="toggleRegions" checked> Show Regions</label>
 
-    <label>
-        <input type="checkbox" id="regionsToggle">
-        Show Regions
-    </label>
-    <br><br>
-
-    <div id="regionDetails" class="info-box">
-    <h2>Click a region</h2>
-    <p>Information will appear here.</p>
-</div>
-
-
-    <input id="searchBox" type="text" placeholder="Search region name…"/>
-    <button id="searchBtn">Find</button>
-
-    <div id="infoBox">
-        <h3>No selection</h3>
-        <p>Click a region to view details.</p>
-    </div>
+    <h3>Region Info</h3>
+    <div id="region-info">Click a region to view details.</div>
 </div>
 
 <div id="map"></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
+
 </body>
 </html>
+
 
