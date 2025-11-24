@@ -1,96 +1,88 @@
-// Initialize map
-var map = L.map("map").setView([1.3, 32.3], 7);
+// ---------------------------
+// MAP INITIALIZATION
+// ---------------------------
+var map = L.map('map').setView([1.5, 32.5], 7);
 
-// Basemap
-var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+var basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19
 }).addTo(map);
 
-// Toggle basemap
-document.getElementById("basemapToggle").addEventListener("change", (e) => {
-    if (e.target.checked) map.addLayer(osm);
-    else map.removeLayer(osm);
-});
-
-// --- REGION LAYER GROUP ---
-var regionLayer = L.geoJSON(null, {
+// Regions group
+var regionsLayer = L.geoJSON(null, {
     style: {
-        color: "#0033cc",
+        color: "#0057e7",
         weight: 2,
-        fillOpacity: 0.2
+        fillOpacity: 0.15
     },
-
     onEachFeature: function (feature, layer) {
+
+        // Hover highlight
         layer.on("mouseover", function () {
-            this.setStyle({ weight: 4, color: "#ff8800" });
+            this.setStyle({
+                weight: 4,
+                color: "#ff6600"
+            });
         });
 
         layer.on("mouseout", function () {
-            regionLayer.resetStyle(this);
+            regionsLayer.resetStyle(this);
         });
 
-        function onEachRegion(feature, layer) {
-    layer.on({
-        mouseover: highlightRegion,
-        mouseout: resetRegionHighlight,
-        click: loadRegionInfo
-    });
-}
-
-// Fetch and display region info
-function loadRegionInfo(e) {
-    let regionName = e.target.feature.properties.ADM1_EN;  // Example property name
-    let cleanName = regionName.toLowerCase().replace(/\s+/g, "");
-    let filePath = `region-info/${cleanName}.html`;
-
-    fetch(filePath)
-        .then(res => {
-            if (!res.ok) {
-                document.getElementById("regionDetails").innerHTML =
-                    `<h2>${regionName}</h2><p>No file found for this region.</p>`;
-                throw new Error("Missing file");
-            }
-            return res.text();
-        })
-        .then(html => {
-            document.getElementById("regionDetails").innerHTML = html;
-        })
-        .catch(err => console.log(err));
-}
-
-            document.getElementById("infoBox").innerHTML = `
-                <h3>${feature.properties.ADM1_EN}</h3>
-                <p><strong>Region Code:</strong> ${feature.properties.ADM1_PCODE}</p>
-            `;
+        // Click event – load HTML file
+        layer.on("click", function () {
+            var regionName = feature.properties.ADM1_EN;  // e.g., CENTRAL
+            loadRegionInfo(regionName);
         });
     }
-});
+}).addTo(map);
 
-// Load regions
+// ---------------------------
+// LOAD REGIONS JSON
+// ---------------------------
 fetch("Uganda Regional Boundaries.json")
     .then(res => res.json())
-    .then(data => {
-        regionLayer.addData(data);
-        console.log("Regions loaded");
-    });
+    .then(data => regionsLayer.addData(data));
 
-// Toggle regions visibility
-document.getElementById("regionsToggle").addEventListener("change", (e) => {
-    if (e.target.checked) map.addLayer(regionLayer);
-    else map.removeLayer(regionLayer);
+
+// ---------------------------
+// LOAD INFORMATION HTML FILE
+// ---------------------------
+function loadRegionInfo(regionName) {
+    let filename = "";
+
+    // map name to correct file
+    switch (regionName.toUpperCase()) {
+        case "CENTRAL": filename = "Regional Information/CENTRAL.html"; break;
+        case "EASTERN": filename = "Regional Information/Eastern.html"; break;
+        case "NORTHERN": filename = "Regional Information/Northern.html"; break;
+        case "WESTERN": filename = "Regional Information/Western.html"; break;
+        default:
+            document.getElementById("region-info").innerHTML = "<b>No info available</b>";
+            return;
+    }
+
+    fetch(filename)
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("region-info").innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById("region-info").innerHTML = "<b>Unable to load info file.</b>";
+        });
+}
+
+
+// ---------------------------
+// TOGGLES
+// ---------------------------
+document.getElementById("toggleBasemap").addEventListener("change", function () {
+    if (this.checked) map.addLayer(basemap);
+    else map.removeLayer(basemap);
 });
 
-// SEARCH FUNCTION
-document.getElementById("searchBtn").addEventListener("click", () => {
-    let searchValue = document.getElementById("searchBox").value.toLowerCase();
-
-    regionLayer.eachLayer(function (layer) {
-        let regionName = layer.feature.properties.ADM1_EN.toLowerCase();
-
-        if (regionName.includes(searchValue)) {
-            map.fitBounds(layer.getBounds());
-            layer.fire("click");
-        }
-    });
+document.getElementById("toggleRegions").addEventListener("change", function () {
+    if (this.checked) map.addLayer(regionsLayer);
+    else map.removeLayer(regionsLayer);
 });
+
 
