@@ -1,22 +1,22 @@
-//-----------------------------------------------------
+// -----------------------------------------------------------
 // INITIALIZE MAP
-//-----------------------------------------------------
+// -----------------------------------------------------------
 var map = L.map("map").setView([1.3, 32.3], 7);
 
-// Basemap
+// Basemap layer
 var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19
 }).addTo(map);
 
-// Basemap toggle
-document.getElementById("toggleBasemap").onchange = function () {
+// Toggle basemap on/off
+document.getElementById("basemapToggle").onchange = function () {
     if (this.checked) map.addLayer(osm);
     else map.removeLayer(osm);
 };
 
-//-----------------------------------------------------
-// LOAD REGIONS
-//-----------------------------------------------------
+// -----------------------------------------------------------
+// REGION STYLES
+// -----------------------------------------------------------
 var regionStyle = {
     color: "blue",
     weight: 2,
@@ -26,15 +26,18 @@ var regionStyle = {
 var highlightStyle = {
     color: "orange",
     weight: 3,
-    fillOpacity: 0.3
+    fillOpacity: 0.30
 };
 
+// -----------------------------------------------------------
+// LOAD REGIONS
+// -----------------------------------------------------------
 var regionsLayer = L.geoJSON(null, {
     style: regionStyle,
 
     onEachFeature: function (feature, layer) {
 
-        // Hover highlight
+        // Hover effect
         layer.on("mouseover", function () {
             layer.setStyle(highlightStyle);
         });
@@ -43,18 +46,20 @@ var regionsLayer = L.geoJSON(null, {
             regionsLayer.resetStyle(layer);
         });
 
-        // CLICK = load region info + zoom
+        // CLICK event — load region info file
         layer.on("click", function () {
-            let regionName = feature.properties.ADM1_EN;
+            let regionName = feature.properties.ADM1_EN.toUpperCase(); // e.g. CENTRAL
             let filePath = "Regional Information/" + regionName + ".html";
 
             loadRegionInfo(filePath);
+
             map.fitBounds(layer.getBounds());
         });
     }
 }).addTo(map);
 
-// Load GeoJSON
+
+// Load Region GeoJSON
 fetch("Uganda Regional Boundaries.json")
     .then(res => res.json())
     .then(data => {
@@ -62,29 +67,23 @@ fetch("Uganda Regional Boundaries.json")
         console.log("Regions loaded");
     });
 
-// Region Toggle
-document.getElementById("toggleRegions").onchange = function () {
+// Show/hide regions
+document.getElementById("regionsToggle").onchange = function () {
     if (this.checked) map.addLayer(regionsLayer);
     else map.removeLayer(regionsLayer);
 };
 
-//-----------------------------------------------------
-// LOAD REGION INFO FROM HTML FILE
-//-----------------------------------------------------
+// -----------------------------------------------------------
+// LOAD REGION INFO HTML FILE
+// -----------------------------------------------------------
 function loadRegionInfo(filePath) {
     fetch(filePath)
-        .then(response => {
-            if (!response.ok) return "<p><b>No info available.</b></p>";
-            return response.text();
-        })
+        .then(response => response.text())
         .then(html => {
-            document.getElementById("region-details").innerHTML = html;
+            document.getElementById("regionInfoBox").innerHTML = html;
         })
-        .catch(err => {
-            document.getElementById("region-details").innerHTML =
-                "<p><b>Error loading info.</b></p>";
+        .catch(() => {
+            document.getElementById("regionInfoBox").innerHTML =
+                "<p><b>No information file found for this region.</b></p>";
         });
 }
-
-
-
