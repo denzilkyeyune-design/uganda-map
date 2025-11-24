@@ -46,7 +46,6 @@ var regionsLayer = L.geoJSON(null, {
         // CLICK event — load region info file
         layer.on("click", function () {
             let regionName = feature.properties.ADM1_EN;   // Example: "CENTRAL"
-
             let filePath = "Regional Information/" + regionName + ".html";
 
             loadRegionInfo(filePath);
