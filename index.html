@@ -1,33 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>bantustats</title>
+    <title>Bantustats - Regional Map</title>
+
     <link rel="stylesheet" href="style.css">
+
+    <!-- Leaflet -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 </head>
 
 <body>
 
-<!-- LEFT SIDEBAR (MAP CONTROLS) -->
-<div id="leftBar">
-    <img src="bantustats.png" id="logo">
+<!-- LEFT SIDEBAR (LOGO + CONTROLS) -->
+<div id="left-sidebar">
+    <img id="logo" src="bantustats.png" alt="Bantustats logo">
 
     <h2>Map Controls</h2>
-    <label><input type="checkbox" id="toggleBasemap" checked> Basemap (on/off)</label><br>
+
+    <label><input type="checkbox" id="toggleBasemap" checked> Basemap</label><br>
     <label><input type="checkbox" id="toggleRegions" checked> Show Regions</label>
 </div>
 
-<!-- MAP IN THE MIDDLE -->
-<div id="map"></div>
-
 <!-- RIGHT SIDEBAR (REGION INFO) -->
-<div id="rightBar">
-    <h3>Region Info</h3>
-    <div id="region-details">Click a region to view details.</div>
+<div id="right-sidebar">
+
+    <!-- TABS -->
+    <div id="tabs">
+        <button class="tab active" data-tab="about">About</button>
+        <button class="tab" data-tab="voters">Voter Data</button>
+        <button class="tab" data-tab="admin">Admin</button>
+        <button class="tab" data-tab="extra">More</button>
+    </div>
+
+    <!-- TAB CONTENT -->
+    <div id="tab-content">
+        <div id="about" class="tab-pane active">
+            <h2>Region Info</h2>
+            <div id="region-details">Click a region to view details.</div>
+        </div>
+
+        <div id="voters" class="tab-pane">
+            <h2>Voter Data</h2>
+            <p>Coming soon...</p>
+        </div>
+
+        <div id="admin" class="tab-pane">
+            <h2>Administration</h2>
+            <p>Coming soon...</p>
+        </div>
+
+        <div id="extra" class="tab-pane">
+            <h2>More Info</h2>
+            <p>Coming soon...</p>
+        </div>
+    </div>
+
 </div>
 
+<!-- MAP -->
+<div id="map"></div>
+
 <script src="script.js"></script>
+
 </body>
 </html>
+
 
