@@ -1,48 +1,82 @@
-/* Map fills entire screen except sidebars */
-#map {
-    position: absolute;
-    top: 0;
-    left: 250px;          /* Leaves space for left sidebar */
-    right: 300px;         /* Leaves space for right sidebar */
-    bottom: 0;
-    z-index: 1;
+/* ---------- BASIC LAYOUT ---------- */
+
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
 }
 
-/* LEFT SIDEBAR (controls) */
-#leftBar {
+/* LEFT SIDEBAR */
+
+#left-sidebar {
     position: absolute;
-    top: 0;
     left: 0;
-    width: 250px;
+    top: 0;
+    width: 260px;
     height: 100%;
     background: white;
+    z-index: 1000;
     padding: 20px;
     overflow-y: auto;
-    z-index: 1000;
-    box-shadow: 3px 0 6px rgba(0,0,0,0.2);
+    box-shadow: 3px 0 6px rgba(0,0,0,0.15);
 }
 
 #logo {
-    width: 200px;
+    width: 90%;
+    display: block;
     margin-bottom: 20px;
 }
 
-/* RIGHT SIDEBAR (region info) */
-#rightBar {
+/* RIGHT SIDEBAR */
+
+#right-sidebar {
     position: absolute;
-    top: 0;
     right: 0;
-    width: 300px;
+    top: 0;
+    width: 350px;
     height: 100%;
     background: white;
+    z-index: 1000;
     padding: 20px;
     overflow-y: auto;
-    z-index: 1000;
-    box-shadow: -3px 0 6px rgba(0,0,0,0.2);
+    box-shadow: -3px 0 6px rgba(0,0,0,0.15);
 }
 
-#rightBar h3 {
-    margin-top: 0;
+/* MAP */
+
+#map {
+    position: absolute;
+    top: 0;
+    left: 260px;        /* leaves room for left sidebar */
+    right: 350px;       /* leaves room for right sidebar */
+    height: 100%;
 }
 
+/* ---------- TABS ---------- */
+
+#tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.tab {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background: #eee;
+    cursor: pointer;
+}
+
+.tab.active {
+    background: #2c7be5;
+    color: white;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
 
